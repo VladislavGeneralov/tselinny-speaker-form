@@ -23,8 +23,9 @@
   <p class="req-note" data-i18n="req_note"></p>
 
   <form id="form" novalidate autocomplete="on">
-    <!-- honeypot: invisible for people, bots fill it -->
-    <input type="text" id="hp" name="company_site" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <!-- honeypot: invisible for people, bots fill it. Name must NOT look like anything browser autofill
+         knows (company/site/url/name/email…) — «company_site» got autofilled and real submissions were dropped. -->
+    <input type="text" id="hp" name="hp_x9q" class="hp" tabindex="-1" autocomplete="new-password" aria-hidden="true">
 
     <!-- contact person -->
     <div class="field" data-required>
@@ -139,17 +140,20 @@
     </div>
 
     <div class="field">
-      <label for="tech_req" data-i18n="tech_req"></label>
-      <span class="hint" data-i18n="tech_req_hint"></span>
+      <span class="label" data-i18n="tech_req"></span>
       <div class="choices" id="tech_presets" hidden></div>
-      <textarea id="tech_req" rows="6"></textarea>
+      <!-- shown only when «Other» is ticked -->
+      <div id="tech_other_box" hidden>
+        <span class="hint" data-i18n="tech_req_hint"></span>
+        <textarea id="tech_req" rows="6"></textarea>
+      </div>
     </div>
 
-    <div class="field">
+    <div class="field" id="interp_field" data-req-mark>
       <span class="label" data-i18n="translation"></span>
       <span class="hint" data-i18n="translation_hint"></span>
       <div class="choices">
-        <label class="choice radio"><input type="radio" name="interpreter" value="none"><span data-i18n="tr_none"></span></label>
+        <label class="choice radio"><input type="radio" name="interpreter" value="none" checked><span data-i18n="tr_none"></span></label>
         <label class="choice radio"><input type="radio" name="interpreter" value="en-ru"><span data-i18n="tr_en_ru"></span></label>
         <label class="choice radio"><input type="radio" name="interpreter" value="en-kk"><span data-i18n="tr_en_kk"></span></label>
         <label class="choice radio"><input type="radio" name="interpreter" value="ru-kk"><span data-i18n="tr_ru_kk"></span></label>

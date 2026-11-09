@@ -189,12 +189,19 @@
       return `<div class="tech-row"><label class="choice"><input type="checkbox" name="tech" value="${esc(p.id)}"${on ? " checked" : ""}>` +
              `<span>${esc(p[lang] || p.en || p.id)}</span></label>${qty}</div>`;
     }).join("");
+    $("#tech_other_box").hidden = !techOtherOn();
   }
+
+  const techOtherOn = () => !!$('#tech_presets input[name="tech"][value="other"]:checked');
 
   $("#tech_presets").addEventListener("change", e => {
     const cb = e.target.closest('input[name="tech"]');
     const qty = cb && $(".tech-count", cb.closest(".tech-row"));
     if (qty) qty.hidden = !cb.checked;
+    if (cb && cb.value === "other") {
+      $("#tech_other_box").hidden = !cb.checked;
+      if (cb.checked) $("#tech_req").focus();
+    }
   });
 
   const techPresets = () => $$('#tech_presets input[name="tech"]:checked').map(cb => {
@@ -303,6 +310,12 @@
     const ev = $("input", em).value.trim();
     if (ev && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ev)) { setErr(em, "err_email"); bad.push(em); }
     if (!state.dates.size) { setErr($("#dates_field"), "err_dates"); bad.push($("#dates_field")); }
+    // interpreter: required; «Other» needs its text too
+    const interp = checkedValues("interpreter")[0];
+    if (!interp || (interp === "other" && !val("interpreter_other"))) {
+      setErr($("#interp_field"), "err_required");
+      bad.push($("#interp_field"));
+    }
     // report in document order
     return bad.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
   }
@@ -341,7 +354,7 @@
       ticketing: val("ticketing"),
       accessibility: val("access"),
       feminatives: $("#fem").checked,
-      tech: { presets: techPresets(), text: val("tech_req") }
+      tech: { presets: techPresets(), text: techOtherOn() ? val("tech_req") : "" }
     };
   }
 
@@ -385,7 +398,7 @@
     up = { eventId: res.eventId, token: res.uploadToken };
     const files = initialUploads();
     showDone(data, res);
-    await runUploads(files, $("#up_status"));
+    await runUploads(files, $("#up_status"), $("#more").hidden ? "up_done_close" : "up_done_more");
   });
 
   /* ---------------- sending ---------------- */
@@ -446,13 +459,14 @@
   }
 
   // One file per request, strictly in order; one retry on a network error.
-  async function runUploads(items, statusEl) {
+  // doneKey: what to say when everything went through (close the tab / or add more below).
+  async function runUploads(items, statusEl, doneKey) {
     statusEl.classList.remove("bad");
-    if (!items.length || !up) { statusEl.textContent = ""; return []; }
+    if (!items.length || !up || !up.eventId) { statusEl.textContent = ""; return []; }
     setBusy(true);
     const failed = [];
     for (let i = 0; i < items.length; i++) {
-      statusEl.textContent = fmt(t("up_progress"), { i: i + 1, n: items.length });
+      statusEl.textContent = fmt(t("up_progress"), { i: i + 1, n: items.length }) + "\n" + t("up_keep_open");
       const it = items[i];
       let ok = false;
       try {
@@ -470,7 +484,8 @@
       if (!ok) failed.push(it.file.name);
     }
     setBusy(false);
-    statusEl.textContent = failed.length ? fmt(t("up_failed"), { names: failed.join(", ") }) : t("up_done");
+    // any failure → no «you can close» line, only the error
+    statusEl.textContent = failed.length ? fmt(t("up_failed"), { names: failed.join(", ") }) : t(doneKey);
     statusEl.classList.toggle("bad", failed.length > 0);
     return failed;
   }
@@ -517,7 +532,7 @@
       return;
     }
     if (!items.length) return;
-    await runUploads(items, $("#more_status"));
+    await runUploads(items, $("#more_status"), "up_done_close");
     // empty the pickers so a second click doesn't upload the same files again
     $$("#more_list .uploader").forEach(u => {
       u._files.forEach(x => URL.revokeObjectURL(x.url));
