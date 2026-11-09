@@ -1,0 +1,348 @@
+/* Look copied from the Tilda form on learning.tselinny.org: peach background,
+   cyan accents, Montserrat, underline-only inputs. */
+:root {
+  --bg: #ffdab9;
+  --accent: #00f0eb;
+  --label: #5b5b5b;
+  --text: #333;
+  --hint: #8c8c8c;
+  --line: #555;
+  --err: #c0392b;
+  --w: 560px;
+}
+
+[hidden] { display: none !important; }
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 400 16px/1.45 "Montserrat", Arial, sans-serif;
+}
+
+.wrap {
+  max-width: var(--w);
+  margin: 0 auto;
+  padding: 72px 20px 120px;
+}
+
+h1 {
+  margin: 0 0 48px;
+  font-weight: 600;
+  font-size: 28px;
+  color: var(--label);
+}
+
+/* ---------- language switch ---------- */
+.langs {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  display: flex;
+  gap: 4px;
+  z-index: 10;
+}
+.langs button {
+  border: 0;
+  background: transparent;
+  font: 600 14px "Montserrat", Arial, sans-serif;
+  color: var(--label);
+  padding: 6px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.langs button.on { background: var(--accent); color: var(--text); }
+
+/* ---------- fields ---------- */
+.field { margin-bottom: 44px; }
+
+.field > label,
+.field > .label,
+.speaker .field > label {
+  display: block;
+  font-weight: 600;
+  font-size: 21px;
+  color: var(--label);
+  margin-bottom: 6px;
+}
+
+.hint {
+  display: block;
+  font-weight: 300;
+  font-size: 14px;
+  color: var(--hint);
+  margin-bottom: 8px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: 400 16px/1.45 "Montserrat", Arial, sans-serif;
+  padding: 14px 0;
+  outline: none;
+}
+textarea { resize: vertical; min-height: 96px; }
+input::placeholder, textarea::placeholder { color: var(--hint); font-weight: 300; }
+input:focus, textarea:focus, select:focus { border-bottom-color: var(--accent); }
+
+.field.invalid input,
+.field.invalid textarea { border-bottom-color: var(--err); }
+.err { margin: 6px 0 0; color: var(--err); font-size: 13px; }
+
+/* ---------- venues ---------- */
+.venues { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; }
+.venue { position: relative; width: 128px; cursor: pointer; }
+.venue input { position: absolute; opacity: 0; pointer-events: none; }
+.venue-img {
+  position: relative;
+  display: block;
+  width: 128px;
+  height: 128px;
+  background: #e9c7a6 center / cover no-repeat;
+}
+.venue-name { display: block; margin-top: 8px; font-size: 15px; }
+.venue-more { margin-top: 18px; }
+/* same square checkbox as everywhere else, sitting in the photo's corner */
+.venue .tick {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--accent);
+  background: var(--bg) center / 14px no-repeat;
+}
+.venue input:checked + .venue-img .tick {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M1.5 6.5l3 3 6-7' fill='none' stroke='%2300f0eb' stroke-width='2'/%3E%3C/svg%3E");
+}
+.venue input:focus-visible + .venue-img { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- checkboxes / radios ---------- */
+.choices { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 4px; }
+.choice { display: inline-flex; align-items: center; gap: 12px; cursor: pointer; font-size: 15px; }
+.choice input { position: absolute; opacity: 0; pointer-events: none; }
+.choice > span::before {
+  content: "";
+  display: inline-block;
+  vertical-align: -4px;
+  width: 18px;
+  height: 18px;
+  margin-right: 12px;
+  border: 2px solid var(--accent);
+  background: transparent center / 12px no-repeat;
+}
+.choice.radio > span::before { border-radius: 50%; }
+.choice input:checked + span::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M1.5 6.5l3 3 6-7' fill='none' stroke='%2300f0eb' stroke-width='2'/%3E%3C/svg%3E");
+}
+.choice.radio input:checked + span::before {
+  background-image: radial-gradient(circle, var(--accent) 0 4px, transparent 5px);
+  background-size: auto;
+}
+.choice input:focus-visible + span::before { outline: 2px solid var(--text); outline-offset: 2px; }
+.choice.solo > span::before { margin-right: 0; }
+#tech_presets { margin-bottom: 8px; }
+.tech-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
+.tech-count { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--hint); }
+.tech-count select { width: auto; padding: 4px 4px 4px 0; cursor: pointer; }
+.other-input { margin-top: 4px; }
+
+/* ---------- stepper ---------- */
+.stepper { display: inline-flex; align-items: center; gap: 8px; }
+.stepper button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.stepper input { width: 80px; text-align: center; -moz-appearance: textfield; }
+.stepper input::-webkit-outer-spin-button,
+.stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ---------- select ---------- */
+.select { position: relative; }
+.select select { appearance: none; -webkit-appearance: none; padding-right: 28px; cursor: pointer; }
+.select::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  margin-top: -3px;
+  border: 6px solid transparent;
+  border-top-color: var(--accent);
+  pointer-events: none;
+}
+
+/* ---------- buttons ---------- */
+.pill {
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--text);
+  font: 400 15px "Montserrat", Arial, sans-serif;
+  padding: 11px 20px;
+  cursor: pointer;
+}
+.pill.big { font-size: 17px; font-weight: 600; padding: 15px 64px; }
+.link-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--label);
+  font: 600 15px "Montserrat", Arial, sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+#add_speaker { margin: -12px 0 44px; }
+.submit-row { text-align: center; margin-top: 8px; }
+
+/* ---------- uploader ---------- */
+.uploader input[type="file"] { display: none; }
+.thumbs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.thumb { position: relative; width: 84px; }
+.thumb img { display: block; width: 84px; height: 84px; object-fit: cover; }
+.thumb span {
+  display: block;
+  font-size: 11px;
+  color: var(--hint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.thumb button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text);
+  color: #fff;
+  font-size: 14px;
+  line-height: 22px;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* ---------- speakers ---------- */
+.speaker { border: 0; border-left: 3px solid var(--accent); margin: 0 0 44px; padding: 0 0 0 18px; }
+.speaker legend {
+  padding: 0;
+  margin-bottom: 20px;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+.speaker legend .remove { margin-left: 14px; font-size: 13px; text-transform: none; letter-spacing: 0; }
+.speaker .field:last-child { margin-bottom: 0; }
+
+/* ---------- calendar ---------- */
+.cal { max-width: 340px; margin-top: 10px; user-select: none; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.cal-title { font-weight: 600; color: var(--label); }
+.cal-nav {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-wd { text-align: center; font-size: 12px; color: var(--hint); padding-bottom: 4px; }
+.cal-day {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  font: 400 14px "Montserrat", Arial, sans-serif;
+  cursor: pointer;
+}
+.cal-day:hover { background: rgba(255, 255, 255, .45); }
+.cal-day.today { box-shadow: inset 0 0 0 1px var(--line); }
+.cal-day.on { background: var(--accent); font-weight: 600; }
+.cal-sum { display: flex; align-items: baseline; gap: 14px; margin-top: 10px; font-size: 15px; min-height: 22px; }
+.field.invalid .cal { outline: 1px solid var(--err); outline-offset: 6px; }
+
+/* ---------- consent + contacts (as on Tilda) ---------- */
+.consent {
+  margin: 36px auto 0;
+  font-weight: 300;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--label);
+}
+.consent a { color: inherit; }
+
+.contact { margin-top: 120px; text-align: center; color: var(--label); }
+.contact h2 { margin: 0 0 40px; font-size: 44px; font-weight: 600; }
+.contact address { font-style: normal; font-weight: 300; font-size: 26px; margin-bottom: 36px; }
+.contact p { font-weight: 300; font-size: 18px; margin: 0 0 40px; }
+.icons { display: flex; justify-content: center; gap: 6px; }
+.icons a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+}
+.icons svg { width: 24px; height: 24px; }
+
+/* ---------- photos: one file + "more photos" tick ---------- */
+.choice.more { margin-top: 14px; }
+
+/* ---------- after submit ---------- */
+.done-title { margin: 0 0 12px; font-size: 28px; font-weight: 600; color: var(--label); }
+#done > p { margin: 0 0 40px; font-size: 18px; font-weight: 300; }
+.more-block { margin: 20px 0 28px; }
+.more-name { margin: 0 0 10px; font-weight: 600; color: var(--label); }
+.more-status { white-space: pre-line; font-size: 13px; color: var(--label); }
+#more .pill.big { margin-top: 8px; }
+
+/* ---------- local output ---------- */
+.out { margin-top: 48px; }
+.out p { font-weight: 600; color: var(--label); }
+.out pre {
+  background: rgba(255, 255, 255, .5);
+  padding: 16px;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 480px) {
+  .wrap { padding-top: 64px; }
+  .field > label, .field > .label, .speaker .field > label { font-size: 19px; }
+  .venue, .venue-img { width: 100px; }
+  .venue-img { height: 100px; }
+  .pill.big { width: 100%; padding-left: 0; padding-right: 0; }
+}

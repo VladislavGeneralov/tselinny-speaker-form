@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Speaker Form — Tselinny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="langs" aria-label="Language">
+  <button type="button" data-lang="en">EN</button>
+  <button type="button" data-lang="ru">RU</button>
+  <button type="button" data-lang="kk">KZ</button>
+</nav>
+
+<main class="wrap">
+  <h1 data-i18n="title"></h1>
+
+  <form id="form" novalidate autocomplete="on">
+
+    <!-- contact person -->
+    <div class="field" data-required>
+      <label for="contact_name" data-i18n="contact_name"></label>
+      <input id="contact_name" type="text" autocomplete="name">
+    </div>
+
+    <div class="field" data-required data-email>
+      <label for="email" data-i18n="email"></label>
+      <input id="email" type="email" autocomplete="email" data-i18n-ph="email_ph">
+    </div>
+
+    <div class="field">
+      <label for="phone" data-i18n="phone"></label>
+      <input id="phone" type="tel" autocomplete="tel" data-i18n-ph="phone_ph">
+    </div>
+
+    <!-- venue -->
+    <div class="field">
+      <span class="label" data-i18n="venue"></span>
+      <div class="venues">
+        <label class="venue">
+          <input type="checkbox" name="venue" value="ORTA 1">
+          <span class="venue-img" style="background-image:url(assets/venues/orta1.jpg)"><i class="tick"></i></span>
+          <span class="venue-name">ORTA 1</span>
+        </label>
+        <label class="venue">
+          <input type="checkbox" name="venue" value="ORTA 3">
+          <span class="venue-img" style="background-image:url(assets/venues/orta3.jpg)"><i class="tick"></i></span>
+          <span class="venue-name">ORTA 3</span>
+        </label>
+        <label class="venue">
+          <input type="checkbox" name="venue" value="Atelier">
+          <span class="venue-img" style="background-image:url(assets/venues/atelier.jpg)"><i class="tick"></i></span>
+          <span class="venue-name">Atelier</span>
+        </label>
+      </div>
+      <div class="choices venue-more">
+        <label class="choice"><input type="checkbox" name="venue" value="other" data-other="venue_other"><span data-i18n="other"></span></label>
+      </div>
+      <input id="venue_other" type="text" class="other-input" data-i18n-ph="specify" hidden>
+    </div>
+
+    <!-- event -->
+    <div class="field" data-required>
+      <label for="event_title" data-i18n="event_title"></label>
+      <input id="event_title" type="text">
+    </div>
+
+    <div class="field" data-required>
+      <label for="event_desc" data-i18n="event_desc"></label>
+      <textarea id="event_desc" rows="6"></textarea>
+    </div>
+
+    <!-- speakers (repeatable) -->
+    <div id="speakers"></div>
+    <button type="button" id="add_speaker" class="link-btn" data-i18n="add_speaker"></button>
+
+    <div class="field">
+      <span class="label" data-i18n="promo"></span>
+      <span class="hint" data-i18n="photo_hint"></span>
+      <div class="uploader" id="promo"></div>
+      <label class="choice more"><input type="checkbox" id="promo_more"><span data-i18n="more_photos"></span></label>
+    </div>
+
+    <!-- dates -->
+    <div class="field" id="dates_field">
+      <span class="label" data-i18n="dates"></span>
+      <span class="hint" data-i18n="dates_hint"></span>
+      <div class="cal" id="cal"></div>
+      <div class="cal-sum">
+        <span id="cal_sum"></span>
+        <button type="button" id="cal_clear" class="link-btn" data-i18n="dates_clear" hidden></button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="duration" data-i18n="duration"></label>
+      <span class="hint" data-i18n="duration_hint"></span>
+      <input id="duration" type="text">
+    </div>
+
+    <div class="field">
+      <span class="label" data-i18n="language"></span>
+      <span class="hint" data-i18n="language_hint"></span>
+      <div class="choices">
+        <label class="choice"><input type="checkbox" name="language" value="kk"><span data-i18n="lang_kk"></span></label>
+        <label class="choice"><input type="checkbox" name="language" value="ru"><span data-i18n="lang_ru"></span></label>
+        <label class="choice"><input type="checkbox" name="language" value="en"><span data-i18n="lang_en"></span></label>
+        <label class="choice"><input type="checkbox" name="language" value="other" data-other="language_other"><span data-i18n="other"></span></label>
+      </div>
+      <input id="language_other" type="text" class="other-input" data-i18n-ph="specify" hidden>
+    </div>
+
+    <div class="field">
+      <label for="age" data-i18n="age"></label>
+      <input id="age" type="text">
+    </div>
+
+    <div class="field">
+      <label for="capacity" data-i18n="capacity"></label>
+      <div class="stepper">
+        <button type="button" data-step="-1" aria-label="−">−</button>
+        <input id="capacity" type="number" min="1" value="1" inputmode="numeric">
+        <button type="button" data-step="1" aria-label="+">+</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="participant_req" data-i18n="participant_req"></label>
+      <textarea id="participant_req" rows="6"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="tech_req" data-i18n="tech_req"></label>
+      <span class="hint" data-i18n="tech_req_hint"></span>
+      <div class="choices" id="tech_presets" hidden></div>
+      <textarea id="tech_req" rows="6"></textarea>
+    </div>
+
+    <div class="field">
+      <span class="label" data-i18n="translation"></span>
+      <span class="hint" data-i18n="translation_hint"></span>
+      <div class="choices">
+        <label class="choice radio"><input type="radio" name="interpreter" value="none"><span data-i18n="tr_none"></span></label>
+        <label class="choice radio"><input type="radio" name="interpreter" value="en-ru"><span data-i18n="tr_en_ru"></span></label>
+        <label class="choice radio"><input type="radio" name="interpreter" value="en-kk"><span data-i18n="tr_en_kk"></span></label>
+        <label class="choice radio"><input type="radio" name="interpreter" value="ru-kk"><span data-i18n="tr_ru_kk"></span></label>
+        <label class="choice radio"><input type="radio" name="interpreter" value="other" data-other="interpreter_other"><span data-i18n="other"></span></label>
+      </div>
+      <input id="interpreter_other" type="text" class="other-input" data-i18n-ph="specify" hidden>
+    </div>
+
+    <div class="field">
+      <label for="ticketing" data-i18n="ticketing"></label>
+      <div class="select">
+        <select id="ticketing">
+          <option value="free" data-i18n="ticket_free"></option>
+          <option value="registration" data-i18n="ticket_reg"></option>
+          <option value="ticketed" data-i18n="ticket_ticketed"></option>
+          <option value="tbd" data-i18n="ticket_tbd"></option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="access" data-i18n="access"></label>
+      <span class="hint" data-i18n="access_hint"></span>
+      <input id="access" type="text">
+    </div>
+
+    <div class="field">
+      <span class="label" data-i18n="fem"></span>
+      <span class="hint" data-i18n="fem_hint"></span>
+      <label class="choice solo"><input type="checkbox" id="fem" checked><span></span></label>
+    </div>
+
+    <div class="submit-row">
+      <button type="submit" class="pill big" data-i18n="submit"></button>
+      <!-- TODO: Privacy Policy URL — not known yet -->
+      <p class="consent"><span data-i18n="consent_a"></span><a href="#" target="_blank" rel="noopener" data-i18n="consent_link"></a><span data-i18n="consent_b"></span></p>
+    </div>
+  </form>
+
+  <!-- after submit: thanks + step 2 (more photos, one file per request) -->
+  <section id="done" hidden>
+    <h2 class="done-title" data-i18n="thanks_title"></h2>
+    <p data-i18n="thanks_text"></p>
+
+    <div id="more" class="field" hidden>
+      <span class="label" data-i18n="more_title"></span>
+      <span class="hint" data-i18n="more_hint"></span>
+      <div id="more_list"></div>
+      <button type="button" class="pill big" id="more_upload" data-i18n="upload_btn"></button>
+      <p id="more_status" class="more-status"></p>
+    </div>
+
+    <div class="out">
+      <p data-i18n="local_note"></p>
+      <pre id="out_pre"></pre>
+      <button type="button" class="link-btn" id="back_local" data-i18n="back_local"></button>
+    </div>
+  </section>
+
+  <footer class="contact">
+    <h2 data-i18n="contact_us"></h2>
+    <address data-i18n="address"></address>
+    <p data-i18n="questions"></p>
+    <div class="icons">
+      <a href="mailto:learning@tselinny.org" title="Email" aria-label="Email">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3z" fill="currentColor"/><path d="M3 6l9 7 9-7" fill="none" stroke="#111" stroke-width="1.6"/></svg>
+      </a>
+      <a data-i18n-href="site_url" href="https://www.tselinny.org/en" target="_blank" rel="noopener" title="Website" aria-label="Website">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18M5 7.5h14M5 16.5h14"/></svg>
+      </a>
+      <a href="https://www.instagram.com/tselinnycenter/" target="_blank" rel="noopener" title="Instagram" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.8"/><circle cx="16.9" cy="7.1" r=".9" fill="currentColor" stroke="none"/></svg>
+      </a>
+    </div>
+  </footer>
+</main>
+
+<template id="speaker_tpl">
+  <fieldset class="speaker">
+    <legend><span data-i18n="speaker"></span> <span class="num"></span>
+      <button type="button" class="link-btn remove" data-i18n="remove"></button>
+    </legend>
+    <div class="field" data-required>
+      <label data-i18n="speaker_name"></label>
+      <span class="hint" data-i18n="speaker_name_hint"></span>
+      <input type="text" class="sp-name">
+    </div>
+    <div class="field">
+      <label data-i18n="speaker_web"></label>
+      <input type="text" class="sp-web">
+    </div>
+    <div class="field">
+      <label data-i18n="speaker_bio"></label>
+      <textarea rows="5" class="sp-bio"></textarea>
+    </div>
+    <div class="field">
+      <span class="label" data-i18n="speaker_photos"></span>
+      <span class="hint" data-i18n="photo_hint"></span>
+      <div class="uploader sp-photos"></div>
+      <label class="choice more"><input type="checkbox" class="sp-more"><span data-i18n="more_photos"></span></label>
+    </div>
+  </fieldset>
+</template>
+
+<script src="i18n.js"></script>
+<script src="form.js"></script>
+</body>
+</html>
