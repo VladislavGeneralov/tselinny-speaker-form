@@ -476,17 +476,20 @@
     const pending = () => allPhotos().some(x => x.status === "up" || x.status === "wait");
     if (!failed() && pending()) {
       setBusy(true);
-      const started = Date.now();
       setSendStatus("wait_photos", false);
-      const tick = () => { $("#send_status").textContent = t("wait_photos") + " " + clock(started); };
-      tick();
-      const timer = setInterval(tick, 1000);
+      // «Дожидаемся загрузки фото: осталось 2 из 5» (Vlad: a counter, not a timer)
+      const show = () => {
+        const all = allPhotos();
+        const left = all.filter(x => x.status === "up" || x.status === "wait").length;
+        $("#send_status").textContent = t("wait_photos") + ": " +
+          t("wait_left").replace("{n}", left).replace("{m}", all.length);
+      };
+      show();
       await new Promise(resolve => {
-        onPhotosChange = () => { if (!pending() || failed()) resolve(); };
+        onPhotosChange = () => { show(); if (!pending() || failed()) resolve(); };
         onPhotosChange();
       });
       onPhotosChange = null;
-      clearInterval(timer);
       setBusy(false);
       setSendStatus(null);
     }
