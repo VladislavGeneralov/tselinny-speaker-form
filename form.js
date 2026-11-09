@@ -5,8 +5,9 @@
 
   const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyRav8ow-BPFPI6V8MrIQiX0MBx0O_aObw_MBmNUvCNuXPowz78Epwz18eBa9ucahQ/exec";
   const T0 = Date.now();        // elapsedMs for the server's bot check
-  let submissionId = null;      // created once, reused on retry → server never makes a duplicate event
-  let up = null;                // { eventId, token } after a successful submit
+  // One id per page: staged photos live under it on the server, and a retried submit with the same id
+  // never makes a duplicate event.
+  const submissionId = randomHex(16);
   let busy = false;             // a submit or an upload is in flight
 
   const STR = window.I18N;
@@ -56,20 +57,26 @@
     if (b) setLang(b.dataset.lang);
   });
 
-  /* ---------------- uploader ---------------- */
+  /* ---------------- uploader: background "stage" upload right after picking (PROTOCOL v2) ---------------- */
 
-  // Each file later travels to Drive through Apps Script in its own request (~50 MB cap
-  // per request, base64 adds ~1/3) → 30 MB per file is the real limit.
+  // Each file travels to Drive through Apps Script in its own request (~50 MB cap per request,
+  // base64 adds ~1/3) → 30 MB per file is the real limit.
   const MAX_BYTES = 30 * 1024 * 1024;
-  const MORE_MAX = 10;   // files per block on the "more photos" step
+  const MAX_FILES = 10;      // per speaker and for promo
+  const PARALLEL = 2;        // stage requests in flight at once
+  const queue = [];          // entries waiting for a free slot
+  let active = 0;
+  let onPhotosChange = null; // set while Submit waits for uploads
 
-  function makeUploader(box, { multiple = false, max = 1 } = {}) {
+  // entry x: { file, url, box, status: "wait" | "up" | "ok" | "err" | "gone", stagedId, ctrl, started }
+  function makeUploader(box) {
     box._files = [];
     box.innerHTML =
-      `<button type="button" class="pill" data-i18n="${multiple ? "upload" : "upload_one"}"></button>` +
-      `<input type="file" accept="image/*"${multiple ? " multiple" : ""}>` +
+      '<button type="button" class="pill" data-i18n="upload"></button>' +
+      '<input type="file" accept="image/*" multiple>' +
       '<div class="thumbs"></div><p class="err" hidden></p>';
     const btn = $("button", box), input = $("input", box), thumbs = $(".thumbs", box), err = $(".err", box);
+    box._draw = draw;
 
     btn.addEventListener("click", () => input.click());
     input.addEventListener("change", () => {
@@ -77,9 +84,10 @@
       for (const f of input.files) {
         if (!f.type.startsWith("image/")) continue;
         if (f.size > MAX_BYTES) { tooBig = true; continue; }
-        if (!multiple) clear();                 // single mode: new pick replaces the old one
-        if (box._files.length >= max) break;
-        box._files.push({ file: f, url: URL.createObjectURL(f) });
+        if (box._files.length >= MAX_FILES) break;
+        const x = { file: f, url: URL.createObjectURL(f), box, status: "wait" };
+        box._files.push(x);
+        stage(x);
       }
       input.value = "";        // allow picking the same file again after removing it
       err.dataset.i18n = "err_file_big";
@@ -88,30 +96,104 @@
       draw();
     });
     thumbs.addEventListener("click", e => {
-      const b = e.target.closest("button[data-i]");
-      if (!b) return;
-      const [gone] = box._files.splice(+b.dataset.i, 1);
-      URL.revokeObjectURL(gone.url);
+      const th = e.target.closest(".thumb");
+      const x = th && box._files[+th.dataset.i];
+      if (!x) return;
+      if (e.target.closest("button.rm")) forget(x);
+      else if (e.target.closest("button.retry")) stage(x);
       draw();
     });
 
-    function clear() {
-      box._files.forEach(x => URL.revokeObjectURL(x.url));
-      box._files = [];
-    }
     function draw() {
       thumbs.innerHTML = box._files.map((x, i) =>
-        `<div class="thumb"><img src="${x.url}" alt=""><span title="${esc(x.file.name)}">${esc(x.file.name)}</span>` +
-        `<button type="button" data-i="${i}" aria-label="×">×</button></div>`).join("");
-      if (!multiple) {
-        btn.dataset.i18n = box._files.length ? "replace" : "upload_one";
-        btn.textContent = t(btn.dataset.i18n);
-      }
+        `<div class="thumb ${x.status}" data-i="${i}"><div class="pic"><img src="${x.url}" alt="">` +
+        (x.status === "ok" ? '<i class="tick"></i>' : x.status === "err" ? "" : '<i class="spin"></i>') +
+        `</div><span class="st" title="${esc(x.file.name)}">${esc(statusText(x))}</span>` +
+        (x.status === "err" ? `<button type="button" class="retry">${esc(t("retry"))}</button>` : "") +
+        '<button type="button" class="rm" aria-label="×">×</button></div>').join("");
     }
     applyI18n(box);
   }
 
-  const hasFile = box => box._files.length > 0;
+  const allPhotos = () => $$(".uploader").flatMap(b => b._files || []);
+  const mbText = n => (n / 1048576).toFixed(1).replace(".", lang === "en" ? "." : ",") + " " + t("mb");
+  const clock = since => {
+    const s = since ? Math.floor((Date.now() - since) / 1000) : 0;
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  };
+  function statusText(x) {
+    if (x.status === "ok") return t("st_done");
+    if (x.status === "err") return x.file.name;
+    return `${mbText(x.file.size)} · ${clock(x.started)}`;
+  }
+
+  // running timers under thumbs that are still uploading (text only, no re-render)
+  setInterval(() => $$(".uploader").forEach(b => (b._files || []).forEach((x, i) => {
+    if (x.status !== "up" && x.status !== "wait") return;
+    const st = $(`.thumb[data-i="${i}"] .st`, b);
+    if (st) st.textContent = statusText(x);
+  })), 1000);
+
+  function stage(x) {
+    x.status = "wait";
+    x.stagedId = null;
+    x.started = 0;
+    queue.push(x);
+    pump();
+  }
+
+  function pump() {
+    while (active < PARALLEL && queue.length) {
+      const x = queue.shift();
+      if (x.status === "wait") run(x);
+    }
+  }
+
+  async function run(x) {
+    active++;
+    x.status = "up";
+    x.started = Date.now();
+    x.ctrl = new AbortController();
+    x.box._draw();
+    try {
+      if (!WEBAPP_URL) {                       // local mode: pretend it went through
+        await new Promise(r => setTimeout(r, 400));
+        if (x.status === "up") { x.stagedId = "local:" + x.file.name; x.status = "ok"; }
+      } else {
+        const data = await toBase64(x.file);
+        const msg = { v: 1, action: "stage", submissionId, fileName: x.file.name,
+                      mimeType: x.file.type || "image/jpeg", data };
+        let res = null;
+        for (let a = 0; a < 2 && x.status === "up" && !res; a++) {   // one retry on a network error
+          try { res = await postJSON(msg, x.ctrl.signal); }
+          catch (e) { if (x.ctrl.signal.aborted) throw e; }
+        }
+        if (x.status === "up") {
+          if (res && res.ok && res.stagedId) { x.stagedId = res.stagedId; x.status = "ok"; }
+          else x.status = "err";
+        }
+      }
+    } catch (e) {
+      if (x.status === "up") x.status = "err";
+    } finally {
+      active--;
+      if (x.status !== "gone") x.box._draw();
+      pump();
+      if (onPhotosChange) onPhotosChange();
+    }
+  }
+
+  // Removed / replaced: abort its upload and forget it (the server bins leftovers on submit).
+  function forget(x) {
+    if (x.ctrl) x.ctrl.abort();
+    x.status = "gone";
+    const i = x.box._files.indexOf(x);
+    if (i >= 0) x.box._files.splice(i, 1);
+    URL.revokeObjectURL(x.url);
+    if (onPhotosChange) onPhotosChange();
+  }
+
+  const stagedIds = box => box._files.filter(x => x.status === "ok").map(x => x.stagedId);
 
   /* ---------------- speakers ---------------- */
 
@@ -124,7 +206,7 @@
       if (ctl && lab) { ctl.id = `sp${id}_${i}`; lab.htmlFor = ctl.id; }
     });
     $(".remove", node).addEventListener("click", () => {
-      $$(".uploader", node).forEach(u => u._files.forEach(x => URL.revokeObjectURL(x.url)));
+      $$(".uploader", node).forEach(u => [...u._files].forEach(forget));
       node.remove();
       renumberSpeakers();
     });
@@ -340,10 +422,9 @@
         name: $(".sp-name", s).value.trim(),
         web: $(".sp-web", s).value.trim(),
         bio: $(".sp-bio", s).value.trim(),
-        hasPhoto: hasFile($(".sp-photos", s)),
-        morePhotos: $(".sp-more", s).checked
+        photos: stagedIds($(".sp-photos", s))
       })),
-      promo: { hasImage: hasFile($("#promo")), more: $("#promo_more").checked },
+      promo: { images: stagedIds($("#promo")) },
       languages: checkedValues("language"),
       languageOther: checkedValues("language").includes("other") ? val("language_other") : "",
       ageLimit: val("age"),
@@ -358,15 +439,6 @@
     };
   }
 
-  // Files picked in the form itself (1 per speaker + 1 promo) → upload queue after submit.
-  function initialUploads() {
-    const list = [];
-    $$("#speakers .speaker").forEach((s, i) =>
-      $(".sp-photos", s)._files.forEach(x => list.push({ slot: `speaker:${i + 1}`, file: x.file })));
-    $("#promo")._files.forEach(x => list.push({ slot: "promo", file: x.file }));
-    return list;
-  }
-
   form.addEventListener("submit", async e => {
     e.preventDefault();
     if (busy) return;
@@ -375,10 +447,10 @@
       bad[0].scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    if (!(await photosReady())) return;
     const data = collect();
     if (!WEBAPP_URL) { showDone(data, null); return; }
 
-    submissionId = submissionId || randomHex(16);
     setBusy(true);
     setSendStatus("sending", false);
     let res;
@@ -395,18 +467,44 @@
       return;
     }
     setSendStatus(null);
-    up = { eventId: res.eventId, token: res.uploadToken };
-    const files = initialUploads();
     showDone(data, res);
-    await runUploads(files, $("#up_status"), $("#more").hidden ? "up_done_close" : "up_done_more");
   });
+
+  // Submit waits for background uploads; false = some photo failed (retry or remove it first).
+  async function photosReady() {
+    const failed = () => allPhotos().find(x => x.status === "err");
+    const pending = () => allPhotos().some(x => x.status === "up" || x.status === "wait");
+    if (!failed() && pending()) {
+      setBusy(true);
+      const started = Date.now();
+      setSendStatus("wait_photos", false);
+      const tick = () => { $("#send_status").textContent = t("wait_photos") + " " + clock(started); };
+      tick();
+      const timer = setInterval(tick, 1000);
+      await new Promise(resolve => {
+        onPhotosChange = () => { if (!pending() || failed()) resolve(); };
+        onPhotosChange();
+      });
+      onPhotosChange = null;
+      clearInterval(timer);
+      setBusy(false);
+      setSendStatus(null);
+    }
+    const f = failed();
+    if (f) {
+      setSendStatus("err_photos", true);
+      f.box.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
+    }
+    return true;
+  }
 
   /* ---------------- sending ---------------- */
 
   // text/plain = "simple" request: no CORS preflight (Apps Script can't answer OPTIONS).
-  async function postJSON(msg) {
+  async function postJSON(msg, signal) {
     const r = await fetch(WEBAPP_URL, {
-      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(msg)
+      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(msg), signal
     });
     return r.json();
   }
@@ -415,12 +513,9 @@
     return Array.from(crypto.getRandomValues(new Uint8Array(bytes)), b => b.toString(16).padStart(2, "0")).join("");
   }
 
-  const fmt = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
-
   function setBusy(on) {
     busy = on;
     $("#submit_btn").disabled = on;
-    $("#more_upload").disabled = on;
   }
 
   function setSendStatus(key, bad) {
@@ -458,88 +553,22 @@
     });
   }
 
-  // One file per request, strictly in order; one retry on a network error.
-  // doneKey: what to say when everything went through (close the tab / or add more below).
-  async function runUploads(items, statusEl, doneKey) {
-    statusEl.classList.remove("bad");
-    if (!items.length || !up || !up.eventId) { statusEl.textContent = ""; return []; }
-    setBusy(true);
-    const failed = [];
-    for (let i = 0; i < items.length; i++) {
-      statusEl.textContent = fmt(t("up_progress"), { i: i + 1, n: items.length }) + "\n" + t("up_keep_open");
-      const it = items[i];
-      let ok = false;
-      try {
-        const data = await toBase64(it.file);
-        const msg = { v: 1, action: "upload", eventId: up.eventId, uploadToken: up.token, slot: it.slot,
-                      fileName: it.file.name, mimeType: it.file.type || "image/jpeg", data };
-        for (let attempt = 0; attempt < 2 && !ok; attempt++) {
-          try {
-            const res = await postJSON(msg);
-            ok = !!res.ok;
-            if (!ok) break;                       // server said no — retrying won't help
-          } catch (err) { /* network: try once more */ }
-        }
-      } catch (err) { /* file could not be read */ }
-      if (!ok) failed.push(it.file.name);
-    }
-    setBusy(false);
-    // any failure → no «you can close» line, only the error
-    statusEl.textContent = failed.length ? fmt(t("up_failed"), { names: failed.join(", ") }) : t(doneKey);
-    statusEl.classList.toggle("bad", failed.length > 0);
-    return failed;
-  }
+  // Closing the tab while photos upload or the form is being sent loses them — ask first.
+  window.addEventListener("beforeunload", e => {
+    if (form.hidden) return;   // already sent
+    if (busy || allPhotos().some(x => x.status === "up" || x.status === "wait")) { e.preventDefault(); e.returnValue = ""; }
+  });
 
-  // Closing the tab mid-upload loses the rest — ask first.
-  window.addEventListener("beforeunload", e => { if (busy && up) { e.preventDefault(); e.returnValue = ""; } });
-
-  /* ---------------- after submit: thanks + "more photos" step ---------------- */
+  /* ---------------- after submit: thanks ---------------- */
 
   function showDone(data, res) {
     form.hidden = true;
     const local = !res;
     $(".out").hidden = !local;
     if (local) $("#out_pre").textContent = JSON.stringify(data, null, 2);
-    const list = $("#more_list");
-    list.innerHTML = "";
-    data.speakers.forEach((s, i) => { if (s.morePhotos) addMoreBlock(s.name, `speaker:${i + 1}`); });
-    if (data.promo.more) addMoreBlock(null, "promo");
-    $("#more").hidden = !list.children.length;
-    $("#more_status").textContent = "";
     $("#done").hidden = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-
-  function addMoreBlock(name, key) {
-    const b = document.createElement("div");
-    b.className = "more-block";
-    b.dataset.key = key;
-    b.innerHTML = (name === null
-      ? '<p class="more-name" data-i18n="promo"></p>'
-      : `<p class="more-name">${esc(name)}</p>`) + '<div class="uploader"></div>';
-    $("#more_list").append(b);
-    makeUploader($(".uploader", b), { multiple: true, max: MORE_MAX });
-    applyI18n(b);
-  }
-
-  $("#more_upload").addEventListener("click", async () => {
-    if (busy) return;
-    const items = $$("#more_list .more-block").flatMap(b =>
-      $(".uploader", b)._files.map(x => ({ slot: b.dataset.key, file: x.file })));
-    if (!up) {   // local mode: show what would be uploaded, one file per request, in this order
-      $("#more_status").textContent = `${t("local_queue")} ${items.length}\n` +
-        items.map(x => `${x.slot}: ${x.file.name} (${(x.file.size / 1048576).toFixed(1)} MB)`).join("\n");
-      return;
-    }
-    if (!items.length) return;
-    await runUploads(items, $("#more_status"), "up_done_close");
-    // empty the pickers so a second click doesn't upload the same files again
-    $$("#more_list .uploader").forEach(u => {
-      u._files.forEach(x => URL.revokeObjectURL(x.url));
-      u._files = [];
-      $(".thumbs", u).innerHTML = "";
-    });
-  });
 
   $("#back_local").addEventListener("click", () => {
     $("#done").hidden = true;

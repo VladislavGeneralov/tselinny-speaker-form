@@ -88,7 +88,6 @@
       <span class="label" data-i18n="promo"></span>
       <span class="hint" data-i18n="photo_hint"></span>
       <div class="uploader" id="promo"></div>
-      <label class="choice more"><input type="checkbox" id="promo_more"><span data-i18n="more_photos"></span></label>
     </div>
 
     <!-- dates -->
@@ -169,7 +168,7 @@
           <option value="free" data-i18n="ticket_free"></option>
           <option value="registration" data-i18n="ticket_reg"></option>
           <option value="ticketed" data-i18n="ticket_ticketed"></option>
-          <option value="tbd" data-i18n="ticket_tbd"></option>
+          <option value="tbd" data-i18n="ticket_tbd" selected></option>
         </select>
       </div>
     </div>
@@ -194,19 +193,10 @@
     </div>
   </form>
 
-  <!-- after submit: thanks + step 2 (more photos, one file per request) -->
+  <!-- after submit: thanks (photos were uploaded in the background while the form was being filled) -->
   <section id="done" hidden>
     <h2 class="done-title" data-i18n="thanks_title"></h2>
     <p data-i18n="thanks_text"></p>
-    <p id="up_status" class="more-status"></p>
-
-    <div id="more" class="field" hidden>
-      <span class="label" data-i18n="more_title"></span>
-      <span class="hint" data-i18n="more_hint"></span>
-      <div id="more_list"></div>
-      <button type="button" class="pill big" id="more_upload" data-i18n="upload_btn"></button>
-      <p id="more_status" class="more-status"></p>
-    </div>
 
     <div class="out">
       <p data-i18n="local_note"></p>
@@ -255,7 +245,6 @@
       <span class="label" data-i18n="speaker_photos"></span>
       <span class="hint" data-i18n="photo_hint"></span>
       <div class="uploader sp-photos"></div>
-      <label class="choice more"><input type="checkbox" class="sp-more"><span data-i18n="more_photos"></span></label>
     </div>
   </fieldset>
 </template>

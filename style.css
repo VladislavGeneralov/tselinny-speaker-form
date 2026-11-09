@@ -360,3 +360,23 @@ input:focus, textarea:focus, select:focus { border-bottom-color: var(--accent); 
 .send-status { margin: 12px 0 0; font-size: 14px; white-space: pre-line; }
 .send-status.bad, .more-status.bad { color: var(--err); }
 .more-status { white-space: pre-line; }
+
+/* background photo upload states: wait/up = pale + spinner, ok = tick, err = pale + red frame + Retry */
+.thumb .pic { position: relative; width: 84px; height: 84px; }
+.thumb.wait img, .thumb.up img, .thumb.err img { opacity: .4; }
+.thumb.err .pic { outline: 2px solid var(--err); outline-offset: -2px; }
+.thumb .spin {
+  position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+  border: 3px solid rgba(0, 0, 0, .12); border-top-color: var(--accent); border-radius: 50%;
+  animation: thumb-spin .8s linear infinite;
+}
+@keyframes thumb-spin { to { transform: rotate(360deg); } }
+.thumb .tick { position: absolute; right: 4px; bottom: 4px; width: 18px; height: 18px; background: var(--accent); }
+.thumb .tick::after {
+  content: ""; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px;
+  border: solid var(--text); border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.thumb button.retry {
+  position: static; width: auto; height: auto; margin-top: 4px; padding: 2px 8px;
+  border: 1px solid var(--err); border-radius: 0; background: none; color: var(--err); font-size: 11px; cursor: pointer;
+}
