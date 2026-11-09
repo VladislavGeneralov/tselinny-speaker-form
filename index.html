@@ -20,8 +20,11 @@
 
 <main class="wrap">
   <h1 data-i18n="title"></h1>
+  <p class="req-note" data-i18n="req_note"></p>
 
   <form id="form" novalidate autocomplete="on">
+    <!-- honeypot: invisible for people, bots fill it -->
+    <input type="text" id="hp" name="company_site" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
 
     <!-- contact person -->
     <div class="field" data-required>
@@ -88,7 +91,7 @@
     </div>
 
     <!-- dates -->
-    <div class="field" id="dates_field">
+    <div class="field" id="dates_field" data-req-mark>
       <span class="label" data-i18n="dates"></span>
       <span class="hint" data-i18n="dates_hint"></span>
       <div class="cal" id="cal"></div>
@@ -180,7 +183,8 @@
     </div>
 
     <div class="submit-row">
-      <button type="submit" class="pill big" data-i18n="submit"></button>
+      <button type="submit" class="pill big" id="submit_btn" data-i18n="submit"></button>
+      <p id="send_status" class="send-status" hidden></p>
       <!-- TODO: Privacy Policy URL — not known yet -->
       <p class="consent"><span data-i18n="consent_a"></span><a href="#" target="_blank" rel="noopener" data-i18n="consent_link"></a><span data-i18n="consent_b"></span></p>
     </div>
@@ -190,6 +194,7 @@
   <section id="done" hidden>
     <h2 class="done-title" data-i18n="thanks_title"></h2>
     <p data-i18n="thanks_text"></p>
+    <p id="up_status" class="more-status"></p>
 
     <div id="more" class="field" hidden>
       <span class="label" data-i18n="more_title"></span>

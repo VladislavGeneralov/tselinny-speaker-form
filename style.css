@@ -346,3 +346,16 @@ input:focus, textarea:focus, select:focus { border-bottom-color: var(--accent); 
   .venue-img { height: 100px; }
   .pill.big { width: 100%; padding-left: 0; padding-right: 0; }
 }
+
+/* required-field marks via CSS, i18n strings untouched */
+.field[data-required] > label::after,
+.field[data-required] > .label::after,
+.field[data-req-mark] > .label::after { content: " *"; color: #777; }
+.req-note { margin: -8px 0 32px; color: #777; font-size: 14px; }
+
+/* honeypot */
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
+
+/* sending / upload status */
+.send-status { margin: 12px 0 0; font-size: 14px; white-space: pre-line; }
+.send-status.bad, .more-status.bad { color: var(--err); }

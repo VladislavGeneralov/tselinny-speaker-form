@@ -1,6 +1,13 @@
-// Speaker form — LOCAL version: validates and shows the payload, sends nothing.
+// Speaker form → Apps Script web app (TSELINNY_EVENTS/PROTOCOL.md, v1).
+// Empty WEBAPP_URL = local mode: validates and shows the payload, sends nothing.
 (() => {
   "use strict";
+
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyRav8ow-BPFPI6V8MrIQiX0MBx0O_aObw_MBmNUvCNuXPowz78Epwz18eBa9ucahQ/exec";
+  const T0 = Date.now();        // elapsedMs for the server's bot check
+  let submissionId = null;      // created once, reused on retry → server never makes a duplicate event
+  let up = null;                // { eventId, token } after a successful submit
+  let busy = false;             // a submit or an upload is in flight
 
   const STR = window.I18N;
   const LOCALE = { en: "en-GB", ru: "ru-RU", kk: "kk-KZ" };
@@ -104,8 +111,7 @@
     applyI18n(box);
   }
 
-  const fileMeta = box => box._files.map(x => ({ name: x.file.name, size: x.file.size, type: x.file.type }));
-  const oneFile = box => fileMeta(box)[0] || null;
+  const hasFile = box => box._files.length > 0;
 
   /* ---------------- speakers ---------------- */
 
@@ -315,52 +321,174 @@
       venueOther: checkedValues("venue").includes("other") ? val("venue_other") : "",
       title: val("event_title"),
       description: val("event_desc"),
+      sessionLength: val("duration"),
+      dates,
       speakers: $$("#speakers .speaker").map(s => ({
         name: $(".sp-name", s).value.trim(),
         web: $(".sp-web", s).value.trim(),
         bio: $(".sp-bio", s).value.trim(),
-        photo: oneFile($(".sp-photos", s)),
+        hasPhoto: hasFile($(".sp-photos", s)),
         morePhotos: $(".sp-more", s).checked
       })),
-      promoImage: oneFile($("#promo")),
-      promoMore: $("#promo_more").checked,
-      dates,
-      dateRange: dateRange(dates),
-      duration: val("duration"),
+      promo: { hasImage: hasFile($("#promo")), more: $("#promo_more").checked },
       languages: checkedValues("language"),
       languageOther: checkedValues("language").includes("other") ? val("language_other") : "",
       ageLimit: val("age"),
       capacity: parseInt(val("capacity"), 10) || 1,
       participantRequirements: val("participant_req"),
-      techPresets: techPresets(),
-      techRequirements: val("tech_req"),
       interpreter: interp,
       interpreterOther: interp === "other" ? val("interpreter_other") : "",
       ticketing: val("ticketing"),
       accessibility: val("access"),
-      feminatives: $("#fem").checked
+      feminatives: $("#fem").checked,
+      tech: { presets: techPresets(), text: val("tech_req") }
     };
   }
 
-  form.addEventListener("submit", e => {
+  // Files picked in the form itself (1 per speaker + 1 promo) → upload queue after submit.
+  function initialUploads() {
+    const list = [];
+    $$("#speakers .speaker").forEach((s, i) =>
+      $(".sp-photos", s)._files.forEach(x => list.push({ slot: `speaker:${i + 1}`, file: x.file })));
+    $("#promo")._files.forEach(x => list.push({ slot: "promo", file: x.file }));
+    return list;
+  }
+
+  form.addEventListener("submit", async e => {
     e.preventDefault();
+    if (busy) return;
     const bad = validate();
     if (bad.length) {
       bad[0].scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    showDone(collect());
+    const data = collect();
+    if (!WEBAPP_URL) { showDone(data, null); return; }
+
+    submissionId = submissionId || randomHex(16);
+    setBusy(true);
+    setSendStatus("sending", false);
+    let res;
+    try {
+      res = await postJSON({ v: 1, action: "submit", submissionId, hp: $("#hp").value,
+                             elapsedMs: Date.now() - T0, data });
+    } catch (err) {
+      res = { ok: false, error: "server" };
+    }
+    setBusy(false);
+    if (!res.ok) {
+      if (res.error === "invalid") { markServerFields(res.fields || []); setSendStatus("err_invalid", true); }
+      else setSendStatus("err_server", true);
+      return;
+    }
+    setSendStatus(null);
+    up = { eventId: res.eventId, token: res.uploadToken };
+    const files = initialUploads();
+    showDone(data, res);
+    await runUploads(files, $("#up_status"));
   });
+
+  /* ---------------- sending ---------------- */
+
+  // text/plain = "simple" request: no CORS preflight (Apps Script can't answer OPTIONS).
+  async function postJSON(msg) {
+    const r = await fetch(WEBAPP_URL, {
+      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(msg)
+    });
+    return r.json();
+  }
+
+  function randomHex(bytes) {
+    return Array.from(crypto.getRandomValues(new Uint8Array(bytes)), b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  const fmt = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+
+  function setBusy(on) {
+    busy = on;
+    $("#submit_btn").disabled = on;
+    $("#more_upload").disabled = on;
+  }
+
+  function setSendStatus(key, bad) {
+    const p = $("#send_status");
+    p.hidden = !key;
+    p.classList.toggle("bad", !!bad);
+    if (key) { p.dataset.i18n = key; p.textContent = t(key); }
+  }
+
+  // Server-side validation errors → the same red marks as local validation.
+  function markServerFields(fields) {
+    const fieldOf = id => $("#" + id).closest(".field");
+    fields.forEach(f => {
+      let el = null, key = "err_required";
+      if (f === "contact.name") el = fieldOf("contact_name");
+      else if (f === "contact.email") { el = fieldOf("email"); key = "err_email"; }
+      else if (f === "title") el = fieldOf("event_title");
+      else if (f === "description") el = fieldOf("event_desc");
+      else if (f === "dates") { el = $("#dates_field"); key = "err_dates"; }
+      else {
+        const m = /^speakers\.(\d+)\.name$/.exec(f);
+        const s = m && $$("#speakers .speaker")[m[1] - 1];
+        if (s) el = $(".sp-name", s).closest(".field");
+      }
+      if (el) setErr(el, key);
+    });
+  }
+
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(",")[1] || "");
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+  }
+
+  // One file per request, strictly in order; one retry on a network error.
+  async function runUploads(items, statusEl) {
+    statusEl.classList.remove("bad");
+    if (!items.length || !up) { statusEl.textContent = ""; return []; }
+    setBusy(true);
+    const failed = [];
+    for (let i = 0; i < items.length; i++) {
+      statusEl.textContent = fmt(t("up_progress"), { i: i + 1, n: items.length });
+      const it = items[i];
+      let ok = false;
+      try {
+        const data = await toBase64(it.file);
+        const msg = { v: 1, action: "upload", eventId: up.eventId, uploadToken: up.token, slot: it.slot,
+                      fileName: it.file.name, mimeType: it.file.type || "image/jpeg", data };
+        for (let attempt = 0; attempt < 2 && !ok; attempt++) {
+          try {
+            const res = await postJSON(msg);
+            ok = !!res.ok;
+            if (!ok) break;                       // server said no — retrying won't help
+          } catch (err) { /* network: try once more */ }
+        }
+      } catch (err) { /* file could not be read */ }
+      if (!ok) failed.push(it.file.name);
+    }
+    setBusy(false);
+    statusEl.textContent = failed.length ? fmt(t("up_failed"), { names: failed.join(", ") }) : t("up_done");
+    statusEl.classList.toggle("bad", failed.length > 0);
+    return failed;
+  }
+
+  // Closing the tab mid-upload loses the rest — ask first.
+  window.addEventListener("beforeunload", e => { if (busy && up) { e.preventDefault(); e.returnValue = ""; } });
 
   /* ---------------- after submit: thanks + "more photos" step ---------------- */
 
-  function showDone(data) {
+  function showDone(data, res) {
     form.hidden = true;
-    $("#out_pre").textContent = JSON.stringify(data, null, 2);
+    const local = !res;
+    $(".out").hidden = !local;
+    if (local) $("#out_pre").textContent = JSON.stringify(data, null, 2);
     const list = $("#more_list");
     list.innerHTML = "";
-    data.speakers.forEach((s, i) => { if (s.morePhotos) addMoreBlock(s.name, `speaker ${i + 1}`); });
-    if (data.promoMore) addMoreBlock(null, "promo");
+    data.speakers.forEach((s, i) => { if (s.morePhotos) addMoreBlock(s.name, `speaker:${i + 1}`); });
+    if (data.promo.more) addMoreBlock(null, "promo");
     $("#more").hidden = !list.children.length;
     $("#more_status").textContent = "";
     $("#done").hidden = false;
@@ -379,11 +507,23 @@
     applyI18n(b);
   }
 
-  // Local version: show what would be uploaded, one file per request, in this order.
-  $("#more_upload").addEventListener("click", () => {
-    const queue = $$("#more_list .more-block").flatMap(b =>
-      $(".uploader", b)._files.map(x => `${b.dataset.key}: ${x.file.name} (${(x.file.size / 1048576).toFixed(1)} MB)`));
-    $("#more_status").textContent = `${t("local_queue")} ${queue.length}\n${queue.join("\n")}`;
+  $("#more_upload").addEventListener("click", async () => {
+    if (busy) return;
+    const items = $$("#more_list .more-block").flatMap(b =>
+      $(".uploader", b)._files.map(x => ({ slot: b.dataset.key, file: x.file })));
+    if (!up) {   // local mode: show what would be uploaded, one file per request, in this order
+      $("#more_status").textContent = `${t("local_queue")} ${items.length}\n` +
+        items.map(x => `${x.slot}: ${x.file.name} (${(x.file.size / 1048576).toFixed(1)} MB)`).join("\n");
+      return;
+    }
+    if (!items.length) return;
+    await runUploads(items, $("#more_status"));
+    // empty the pickers so a second click doesn't upload the same files again
+    $$("#more_list .uploader").forEach(u => {
+      u._files.forEach(x => URL.revokeObjectURL(x.url));
+      u._files = [];
+      $(".thumbs", u).innerHTML = "";
+    });
   });
 
   $("#back_local").addEventListener("click", () => {
