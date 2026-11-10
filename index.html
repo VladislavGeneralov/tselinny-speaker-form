@@ -188,15 +188,29 @@
     <div class="submit-row">
       <button type="submit" class="pill big" id="submit_btn" data-i18n="submit"></button>
       <p id="send_status" class="send-status" hidden></p>
-      <!-- TODO: Privacy Policy URL — not known yet -->
-      <p class="consent"><span data-i18n="consent_a"></span><a href="#" target="_blank" rel="noopener" data-i18n="consent_link"></a><span data-i18n="consent_b"></span></p>
+      <p class="consent"><span data-i18n="consent_a"></span><a href="https://shop.tselinny.org/personaldata" target="_blank" rel="noopener" data-i18n="consent_link"></a><span data-i18n="consent_b"></span></p>
     </div>
   </form>
+
+  <!-- after submit: «нужна закупка?» (BUY_PAGE.md §2). Yes → «сейчас» opens buy.html, «позже» → thanks -->
+  <section id="buyq" hidden>
+    <h2 class="done-title" data-i18n="buyq_title"></h2>
+    <div class="buyq-btns" id="buyq_1">
+      <button type="button" class="pill big" data-ans="yes" data-i18n="yes"></button>
+      <button type="button" class="pill big" data-ans="no" data-i18n="no"></button>
+    </div>
+    <div class="buyq-btns" id="buyq_2" hidden>
+      <button type="button" class="pill big" id="buy_now" data-i18n="buy_now"></button>
+      <button type="button" class="pill big" id="buy_later" data-i18n="buy_later"></button>
+    </div>
+    <p id="buyq_status" class="send-status" hidden></p>
+  </section>
 
   <!-- after submit: thanks (photos were uploaded in the background while the form was being filled) -->
   <section id="done" hidden>
     <h2 class="done-title" data-i18n="thanks_title"></h2>
     <p data-i18n="thanks_text"></p>
+    <p id="done_later" data-i18n="buy_later_note" hidden></p>
 
     <div class="out">
       <p data-i18n="local_note"></p>

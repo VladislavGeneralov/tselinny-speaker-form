@@ -310,3 +310,116 @@ window.TECH_PRESETS = [
     ru: "Прочее",
     kk: "Басқа" }
 ];
+
+// Purchase question after the speaker form + the purchase page buy.html (TSELINNY_EVENTS/BUY_PAGE.md).
+// RU rules = «закупка шаблон» verbatim. EN/KZ — DRAFT by Claude, must be checked by the translator.
+// buy_rules / buy_how: one rule per line.
+Object.assign(window.I18N.en, {
+  buyq_title: "Does the event need any materials or tools to be purchased?",
+  yes: "Yes",
+  no: "No",
+  buy_now: "Fill in now",
+  buy_later: "Later",
+  buy_later_note: "Our team will send you the link to the purchase list.",
+  buy_title: "Purchase list",
+  buy_loading: "Loading…",
+  buy_dates: "Dates",
+  buy_deadline: "Purchase deadline",
+  buy_rules: "The list of materials must be sent to the curator no later than 7 days before the event.\nMarketplaces (Ozon, Wildberries, AliExpress, Temu, Kaspi, etc.) are not used.\nWhere possible, choose all materials in one shop; if something is not available, please suggest alternatives.\nState the exact quantity calculated by the number of participants (+ a small reserve).\nDo not order materials that cannot be reused or are bought with an excessive reserve.\nWe do not support single use (plastic tableware, disposable palettes, etc.).\nThe list must contain specific items (name, specifications), without general wording.\nMaterials added after the deadline may not be purchased, at the coordinator's discretion.",
+  buy_how_title: "How to fill in the table",
+  buy_how: "A name or a link is enough for a row.\nQuantity is the total for the whole event, required.\nAt least one row is needed.",
+  col_name: "Name",
+  col_comment: "Comment",
+  col_qty: "Quantity (total)",
+  col_link: "Link",
+  qty_ph: "e.g. 30 pcs",
+  buy_add: "+ row",
+  buy_del: "Remove row",
+  buy_send: "Send",
+  buy_draft: "Draft not sent",
+  buy_sent: "Sent {when}. You can edit and send again until {deadline}.",
+  buy_closed: "The deadline for the purchase list has passed ({deadline}). Write to us: learning@tselinny.org",
+  buy_bad_link: "The link is invalid.",
+  err_name_or_link: "Enter a name or a link",
+  err_qty: "Enter the quantity",
+  err_link_http: "The link must start with http",
+  err_no_rows: "Add at least one row",
+  buy_err_invalid: "Please check the highlighted rows",
+  buy_err_server: "Could not send. Check your connection and press Send again."
+});
+
+Object.assign(window.I18N.ru, {
+  buyq_title: "Для проведения мероприятия нужна закупка материалов/инструментов?",
+  yes: "Да",
+  no: "Нет",
+  buy_now: "Заполнить сейчас",
+  buy_later: "Позже",
+  buy_later_note: "Ссылку на закупочный лист пришлёт команда.",
+  buy_title: "Закупочный лист",
+  buy_loading: "Загрузка…",
+  buy_dates: "Даты",
+  buy_deadline: "Дедлайн закупки",
+  buy_rules: "Список материалов необходимо передавать куратору не позднее чем за 7 дней до мероприятия.\nМаркетплейсы (Ozon, Wildberries, AliExpress, Temu, Kaspi и др.) не используются.\nПо возможности подбирайте материалы в одном магазине; при отсутствии просим вас предложить альтернативы.\nУказывайте точное количество, рассчитанное по числу участников (+ небольшой запас).\nНе заказывайте материалы, которые не могут быть использованы повторно или закупаются с избыточным запасом.\nМы не поддерживаем одноразовое использование (пластиковая посуда, одноразовые палитры и т.п.).\nВ списке должны быть конкретные позиции (название, характеристики), без общих формулировок.\nМатериалы, добавленные позже установленного срока, могут не закупаться по решению координатора.",
+  buy_how_title: "Как заполнять таблицу",
+  buy_how: "В строке достаточно наименования или ссылки.\nКоличество — всего на мероприятие, обязательно.\nНужна хотя бы одна строка.",
+  col_name: "Наименование",
+  col_comment: "Комментарий",
+  col_qty: "Количество (всего)",
+  col_link: "Ссылка",
+  qty_ph: "напр. 30 шт.",
+  buy_add: "+ строка",
+  buy_del: "Удалить строку",
+  buy_send: "Отправить",
+  buy_draft: "Черновик не отправлен",
+  buy_sent: "Отправлено {when}. Можно изменить и отправить ещё раз до {deadline}.",
+  buy_closed: "Срок подачи закупки прошёл ({deadline}). Напишите нам: learning@tselinny.org",
+  buy_bad_link: "Ссылка недействительна.",
+  err_name_or_link: "Укажите наименование или ссылку",
+  err_qty: "Укажите количество",
+  err_link_http: "Ссылка должна начинаться с http",
+  err_no_rows: "Добавьте хотя бы одну строку",
+  buy_err_invalid: "Проверьте отмеченные строки",
+  buy_err_server: "Не удалось отправить. Проверьте интернет и нажмите «Отправить» ещё раз."
+});
+
+Object.assign(window.I18N.kk, {
+  buyq_title: "Іс-шараны өткізу үшін материалдар/құралдар сатып алу керек пе?",
+  yes: "Иә",
+  no: "Жоқ",
+  buy_now: "Қазір толтыру",
+  buy_later: "Кейінірек",
+  buy_later_note: "Сатып алу тізіміне сілтемені команда жібереді.",
+  buy_title: "Сатып алу тізімі",
+  buy_loading: "Жүктелуде…",
+  buy_dates: "Күндері",
+  buy_deadline: "Сатып алу мерзімі",
+  buy_rules: "Материалдар тізімін кураторға іс-шарадан кемінде 7 күн бұрын жіберу қажет.\nМаркетплейстер (Ozon, Wildberries, AliExpress, Temu, Kaspi және т.б.) пайдаланылмайды.\nМүмкіндігінше материалдарды бір дүкеннен таңдаңыз; болмаған жағдайда баламаларын ұсынуыңызды сұраймыз.\nҚатысушылар санына қарай есептелген нақты мөлшерді көрсетіңіз (+ шағын қор).\nҚайта пайдалануға келмейтін немесе артық қормен сатып алынатын материалдарға тапсырыс бермеңіз.\nБіз бір реттік пайдалануды қолдамаймыз (пластик ыдыс, бір реттік палитралар және т.б.).\nТізімде жалпы тұжырымдарсыз нақты позициялар (атауы, сипаттамалары) болуы керек.\nБелгіленген мерзімнен кейін қосылған материалдар үйлестірушінің шешімі бойынша сатып алынбауы мүмкін.",
+  buy_how_title: "Кестені қалай толтыру керек",
+  buy_how: "Жолда атауы немесе сілтеме жеткілікті.\nСаны — бүкіл іс-шараға барлығы, міндетті.\nКемінде бір жол қажет.",
+  col_name: "Атауы",
+  col_comment: "Түсініктеме",
+  col_qty: "Саны (барлығы)",
+  col_link: "Сілтеме",
+  qty_ph: "мыс. 30 дана",
+  buy_add: "+ жол",
+  buy_del: "Жолды жою",
+  buy_send: "Жіберу",
+  buy_draft: "Жоба жіберілмеген",
+  buy_sent: "{when} жіберілді. {deadline} дейін өзгертіп, қайта жіберуге болады.",
+  buy_closed: "Сатып алу тізімін тапсыру мерзімі өтті ({deadline}). Бізге жазыңыз: learning@tselinny.org",
+  buy_bad_link: "Сілтеме жарамсыз.",
+  err_name_or_link: "Атауын немесе сілтемені көрсетіңіз",
+  err_qty: "Санын көрсетіңіз",
+  err_link_http: "Сілтеме http-дан басталуы керек",
+  err_no_rows: "Кемінде бір жол қосыңыз",
+  buy_err_invalid: "Белгіленген жолдарды тексеріңіз",
+  buy_err_server: "Жіберу мүмкін болмады. Интернетті тексеріп, «Жіберу» батырмасын қайта басыңыз."
+});
+
+// Organiser page org.html (ORG_PAGE.md) — Russian only.
+Object.assign(window.I18N.ru, {
+  err_org_ticket: "Выберите одно из трёх",
+  err_org_cats: "Отметьте хотя бы одну категорию",
+  err_org_times: "Укажите время у каждой даты",
+  org_err_server: "Не удалось сохранить. Проверьте интернет и нажмите «Сохранить в ORG» ещё раз."
+});

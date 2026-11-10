@@ -387,3 +387,77 @@ input:focus, textarea:focus, select:focus { border-bottom-color: var(--accent); 
 /* thanks screen centred */
 #done { text-align: center; margin-top: 80px; }
 #done .out { text-align: left; }
+
+/* purchase question after submit */
+#buyq { text-align: center; margin-top: 80px; }
+#buyq .done-title { font-size: 24px; margin-bottom: 32px; }
+.buyq-btns { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; }
+.buyq-btns .pill.big { min-width: 150px; padding-left: 32px; padding-right: 32px; }
+
+/* ---------- purchase page buy.html ---------- */
+.wrap.buy { max-width: 1000px; }
+.buy-msg { font-size: 18px; font-weight: 300; }
+.buy-msg.bad { color: var(--err); font-weight: 400; }
+.buy-head { margin-bottom: 28px; font-size: 16px; }
+.buy-head p { margin: 0 0 6px; }
+.buy-event { font-size: 22px; font-weight: 600; color: var(--label); }
+.buy-k { color: var(--label); }
+.buy-rules { margin: 0 0 24px; padding-left: 20px; font-size: 14px; font-weight: 300; }
+.buy-rules li { margin-bottom: 4px; }
+.buy-how-title { margin: 0 0 8px; font-weight: 600; color: var(--label); }
+.buy-note { margin: 0 0 12px; padding: 10px 14px; background: rgba(255, 255, 255, .5); font-size: 14px; }
+.buy-note.draft { background: var(--accent); }
+
+.brow {
+  display: grid;
+  grid-template-columns: 28px 1.4fr 1.2fr .8fr 1.4fr 28px;
+  gap: 0 14px;
+  align-items: end;
+}
+.bhead { font-size: 13px; font-weight: 600; color: var(--label); padding-bottom: 2px; }
+.bnum { color: var(--hint); font-size: 14px; padding-bottom: 16px; }
+.bhead .bnum { padding-bottom: 0; }
+.bcell { display: block; }
+.blbl { display: none; }
+.bcell input { padding: 12px 0; }
+.bcell input.bad { border-bottom-color: var(--err); }
+.bdel {
+  border: 0; background: none; color: var(--hint); font-size: 22px; line-height: 1;
+  padding: 0 0 12px; cursor: pointer;
+}
+.bdel:hover { color: var(--err); }
+.brow > .err { grid-column: 2 / -1; }
+#buy_add { margin: 16px 0 44px; }
+#buy_rows_err { margin: 8px 0 0; }
+
+/* phone: each row = a card with its own labels */
+@media (max-width: 720px) {
+  .bhead { display: none; }
+  .brow {
+    position: relative;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 10px 0 14px 34px;
+    border-left: 3px solid var(--accent);
+    margin-bottom: 22px;
+  }
+  .bnum { position: absolute; left: 10px; top: 12px; padding: 0; }
+  .blbl { display: block; font-size: 13px; font-weight: 600; color: var(--label); margin-top: 8px; }
+  .bcell input { padding: 8px 0; }
+  .bdel { position: absolute; right: 0; top: 4px; padding: 0; }
+  .brow > .err { grid-column: 1; }
+}
+
+/* ---------- organiser page org.html ---------- */
+.org-ro { margin: 4px 0 10px; font-size: 16px; }
+.org-hint { margin-top: 10px; }
+.org-h { margin: 8px 0 32px; font-size: 24px; font-weight: 600; color: var(--label); }
+.org-schedule { margin-top: 18px; max-width: 420px; }
+.org-sched-title { margin: 0 0 6px; font-weight: 600; color: var(--label); }
+.org-row { display: flex; align-items: baseline; gap: 14px; }
+.org-row span { flex: 0 0 140px; font-size: 15px; }
+.org-row input { padding: 8px 0; }
+.org-row input.bad { border-bottom-color: var(--err); }
+#org_fill_times { margin-top: 10px; font-size: 13px; }
+#done .pill { display: inline-block; text-decoration: none; }
+.org-top { margin: -36px 0 36px; }

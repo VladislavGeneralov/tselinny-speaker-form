@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Закупочный лист — Tselinny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="langs" aria-label="Language">
+  <button type="button" data-lang="en">EN</button>
+  <button type="button" data-lang="ru">RU</button>
+  <button type="button" data-lang="kk">KZ</button>
+</nav>
+
+<!-- Purchase page (TSELINNY_EVENTS/BUY_PAGE.md). buy.html?d=<docId>&k=<key>&lang=<en|ru|kk> -->
+<main class="wrap buy">
+  <h1 data-i18n="buy_title"></h1>
+
+  <p id="buy_loading" class="buy-msg" data-i18n="buy_loading"></p>
+  <p id="buy_closed" class="buy-msg bad" hidden></p>
+
+  <form id="buy_form" novalidate hidden>
+    <div class="buy-head">
+      <p class="buy-event" id="buy_event"></p>
+      <p><span class="buy-k" data-i18n="buy_dates"></span>: <span id="buy_dates"></span></p>
+      <p><span class="buy-k" data-i18n="buy_deadline"></span>: <b id="buy_deadline"></b></p>
+    </div>
+
+    <ul class="buy-rules" id="buy_rules"></ul>
+    <p class="buy-how-title" data-i18n="buy_how_title"></p>
+    <ul class="buy-rules" id="buy_how"></ul>
+
+    <p id="buy_sent" class="buy-note" hidden></p>
+    <p id="buy_draft" class="buy-note draft" data-i18n="buy_draft" hidden></p>
+
+    <div class="buy-table">
+      <div class="brow bhead" aria-hidden="true">
+        <span class="bnum">#</span>
+        <span data-i18n="col_name"></span>
+        <span data-i18n="col_comment"></span>
+        <span data-i18n="col_qty"></span>
+        <span data-i18n="col_link"></span>
+        <span></span>
+      </div>
+      <div id="buy_rows"></div>
+    </div>
+    <p id="buy_rows_err" class="err" data-i18n="err_no_rows" hidden></p>
+    <button type="button" class="link-btn" id="buy_add" data-i18n="buy_add"></button>
+
+    <div class="submit-row">
+      <button type="submit" class="pill big" id="buy_send" data-i18n="buy_send"></button>
+      <p id="buy_status" class="send-status" hidden></p>
+    </div>
+  </form>
+
+  <footer class="contact">
+    <h2 data-i18n="contact_us"></h2>
+    <address data-i18n="address"></address>
+    <p data-i18n="questions"></p>
+    <div class="icons">
+      <a href="mailto:learning@tselinny.org" title="Email" aria-label="Email">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3z" fill="currentColor"/><path d="M3 6l9 7 9-7" fill="none" stroke="#111" stroke-width="1.6"/></svg>
+      </a>
+      <a data-i18n-href="site_url" href="https://www.tselinny.org/en" target="_blank" rel="noopener" title="Website" aria-label="Website">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18M5 7.5h14M5 16.5h14"/></svg>
+      </a>
+      <a href="https://www.instagram.com/tselinnycenter/" target="_blank" rel="noopener" title="Instagram" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.8"/><circle cx="16.9" cy="7.1" r=".9" fill="currentColor" stroke="none"/></svg>
+      </a>
+    </div>
+  </footer>
+</main>
+
+<template id="row_tpl">
+  <div class="brow">
+    <span class="bnum"></span>
+    <label class="bcell"><span class="blbl" data-i18n="col_name"></span><input type="text" data-k="name" maxlength="200"></label>
+    <label class="bcell"><span class="blbl" data-i18n="col_comment"></span><input type="text" data-k="comment" maxlength="300"></label>
+    <label class="bcell"><span class="blbl" data-i18n="col_qty"></span><input type="text" data-k="qty" maxlength="50" data-i18n-ph="qty_ph"></label>
+    <label class="bcell"><span class="blbl" data-i18n="col_link"></span><input type="text" data-k="link" maxlength="500" inputmode="url" placeholder="https://"></label>
+    <button type="button" class="bdel" aria-label="×">×</button>
+  </div>
+</template>
+
+<script src="i18n.js"></script>
+<script src="buy.js"></script>
+</body>
+</html>

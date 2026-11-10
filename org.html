@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Страница организатора — Tselinny</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<!-- GENERATED from index.html by tools/_make_org_html.py — edit index.html + the script, not this file -->
+<body data-org>
+
+<nav class="langs" aria-label="Language" hidden>
+  <button type="button" data-lang="en">EN</button>
+  <button type="button" data-lang="ru">RU</button>
+  <button type="button" data-lang="kk">KZ</button>
+</nav>
+
+<main class="wrap">
+  <h1 id="org_title">Заявка</h1>
+  <p id="org_doc_top" class="org-top" hidden><a class="link-btn" id="org_doc_top_link" href="#" target="_blank" rel="noopener">Открыть документ мероприятия</a></p>
+  <p id="org_msg" class="buy-msg">Загрузка…</p>
+  <p class="req-note" data-i18n="req_note"></p>
+
+  <form id="form" novalidate autocomplete="off" hidden>
+    <!-- honeypot: invisible for people, bots fill it. Name must NOT look like anything browser autofill
+         knows (company/site/url/name/email…) — «company_site» got autofilled and real submissions were dropped. -->
+    <input type="text" id="hp" name="hp_x9q" class="hp" tabindex="-1" autocomplete="new-password" aria-hidden="true">
+
+
+    <div class="field">
+      <span class="label">Контактное лицо</span>
+      <p id="org_contact" class="org-ro"></p>
+    </div>
+
+    <!-- venue -->
+    <div class="field">
+      <span class="label" data-i18n="venue"></span>
+      <div class="venues">
+        <label class="venue">
+          <input type="checkbox" name="venue" value="ORTA 1">
+          <span class="venue-img" style="background-image:url(assets/venues/orta1.jpg)"><i class="tick"></i></span>
+          <span class="venue-name">ORTA 1</span>
+        </label>
+        <label class="venue">
+          <input type="checkbox" name="venue" value="ORTA 3">
+          <span class="venue-img" style="background-image:url(assets/venues/orta3.jpg)"><i class="tick"></i></span>
+          <span class="venue-name">ORTA 3</span>
+        </label>
+        <label class="venue">
+          <input type="checkbox" name="venue" value="Atelier">
+          <span class="venue-img" style="background-image:url(assets/venues/atelier.jpg)"><i class="tick"></i></span>
+          <span class="venue-name">Atelier</span>
+        </label>
+      </div>
+      <div class="choices venue-more">
+        <label class="choice"><input type="checkbox" name="venue" value="other" data-other="venue_other"><span data-i18n="other"></span></label>
+      </div>
+      <input id="venue_other" type="text" class="other-input" data-i18n-ph="specify" hidden>
+    </div>
+
+    <!-- event -->
+    <div class="field" data-required>
+      <label for="event_title" data-i18n="event_title"></label>
+      <input id="event_title" type="text">
+    </div>
+
+    <div class="field" data-required>
+      <label for="event_desc" data-i18n="event_desc"></label>
+      <textarea id="event_desc" rows="6"></textarea>
+    </div>
+
+    <!-- speakers (repeatable) -->
+    <div id="speakers"></div>
+    <button type="button" id="add_speaker" class="link-btn" data-i18n="add_speaker"></button>
+
+    <div class="field">
+      <span class="label">Фото</span>
+      <p class="org-ro" id="org_photos"></p>
+      <a class="pill" id="org_photo_link" href="#" target="_blank" rel="noopener">Открыть папку с фото</a>
+      <span class="hint org-hint">Фото, загруженные прямо в папку, сами в ORG не попадут: вставьте их ссылки в ORG («Ссылка(и) на фото» или «Промо-изображения»).</span>
+    </div>
+
+    <!-- dates -->
+    <div class="field" id="dates_field" data-req-mark>
+      <span class="label" data-i18n="dates"></span>
+      <span class="hint" data-i18n="dates_hint"></span>
+      <div class="cal" id="cal"></div>
+      <div class="cal-sum">
+        <span id="cal_sum"></span>
+        <button type="button" id="cal_clear" class="link-btn" data-i18n="dates_clear" hidden></button>
+      </div>
+      <div id="org_schedule" class="org-schedule"></div>
+    </div>
+
+    <div class="field">
+      <label for="duration" data-i18n="duration"></label>
+      <span class="hint" data-i18n="duration_hint"></span>
+      <input id="duration" type="text">
+    </div>
+
+    <div class="field">
+      <span class="label" data-i18n="language"></span>
+      <span class="hint" data-i18n="language_hint"></span>
+      <div class="choices">
+        <label class="choice"><input type="checkbox" name="language" value="kk"><span data-i18n="lang_kk"></span></label>
+        <label class="choice"><input type="checkbox" name="language" value="ru"><span data-i18n="lang_ru"></span></label>
+        <label class="choice"><input type="checkbox" name="language" value="en"><span data-i18n="lang_en"></span></label>
+        <label class="choice"><input type="checkbox" name="language" value="other" data-other="language_other"><span data-i18n="other"></span></label>
+      </div>
+      <input id="language_other" type="text" class="other-input" data-i18n-ph="specify" hidden>
+    </div>
+
+    <div class="field">
+      <label for="age" data-i18n="age"></label>
+      <input id="age" type="text">
+    </div>
+
+    <div class="field">
+      <label for="capacity" data-i18n="capacity"></label>
+      <div class="stepper">
+        <button type="button" data-step="-1" aria-label="−">−</button>
+        <input id="capacity" type="number" min="1" value="1" inputmode="numeric">
+        <button type="button" data-step="1" aria-label="+">+</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="participant_req" data-i18n="participant_req"></label>
+      <textarea id="participant_req" rows="6"></textarea>
+    </div>
+
+    <div class="field">
+      <span class="label" data-i18n="tech_req"></span>
+      <div class="choices" id="tech_presets" hidden></div>
+      <!-- shown only when «Other» is ticked -->
+      <div id="tech_other_box" hidden>
+        <span class="hint" data-i18n="tech_req_hint"></span>
+        <textarea id="tech_req" rows="6"></textarea>
+      </div>
+    </div>
+
+    <div class="field" id="interp_field" data-req-mark>
+      <span class="label" data-i18n="translation"></span>
+      <span class="hint" data-i18n="translation_hint"></span>
+      <div class="choices">
+        <label class="choice radio"><input type="radio" name="interpreter" value="none" checked><span data-i18n="tr_none"></span></label>
+        <label class="choice radio"><input type="radio" name="interpreter" value="en-ru"><span data-i18n="tr_en_ru"></span></label>
+        <label class="choice radio"><input type="radio" name="interpreter" value="en-kk"><span data-i18n="tr_en_kk"></span></label>
+        <label class="choice radio"><input type="radio" name="interpreter" value="ru-kk"><span data-i18n="tr_ru_kk"></span></label>
+        <label class="choice radio"><input type="radio" name="interpreter" value="other" data-other="interpreter_other"><span data-i18n="other"></span></label>
+      </div>
+      <input id="interpreter_other" type="text" class="other-input" data-i18n-ph="specify" hidden>
+    </div>
+
+
+    <div class="field" id="ticket_field" data-req-mark>
+      <span class="label">Тип билетов</span>
+      <span class="hint" id="ticket_hint"></span>
+      <div class="choices">
+        <label class="choice radio"><input type="radio" name="ticket_org" value="free"><span>свободный вход</span></label>
+        <label class="choice radio"><input type="radio" name="ticket_org" value="registration"><span>нужна регистрация</span></label>
+        <label class="choice radio"><input type="radio" name="ticket_org" value="ticketed"><span>вход по билетам</span></label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="access" data-i18n="access"></label>
+      <span class="hint" data-i18n="access_hint"></span>
+      <input id="access" type="text">
+    </div>
+
+    <div class="field">
+      <span class="label" data-i18n="fem"></span>
+      <span class="hint" data-i18n="fem_hint"></span>
+      <label class="choice solo"><input type="checkbox" id="fem" checked><span></span></label>
+    </div>
+
+    <h2 class="org-h">Для организатора</h2>
+
+    <div class="field" id="cats_field" data-req-mark>
+      <span class="label">Категории сайта</span>
+      <span class="hint">можно несколько</span>
+      <div class="choices" id="org_cats"></div>
+    </div>
+
+    <div class="field" id="edu_field" data-req-mark>
+      <span class="label">Категория в «Образовании»</span>
+      <div class="choices" id="org_edu"></div>
+    </div>
+
+    <div class="field">
+      <label for="org_price">Цена за одно занятие</label>
+      <span class="hint">обязательна, если «вход по билетам» (можно вписать позже в ORG)</span>
+      <input id="org_price" type="text" inputmode="numeric">
+    </div>
+
+    <div class="field">
+      <label for="org_price_course">Цена за курс</label>
+      <span class="hint">необязательна</span>
+      <input id="org_price_course" type="text" inputmode="numeric">
+    </div>
+
+    <div class="field">
+      <label for="org_photobank">ТЗ по подбору фото из нашего фотобанка</label>
+      <span class="hint">для Айсулу</span>
+      <textarea id="org_photobank" rows="4"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="org_poster">Пожелания по дизайну афиши от отдела-организатора</label>
+      <span class="hint">для Жоодара</span>
+      <textarea id="org_poster" rows="4"></textarea>
+    </div>
+
+    <div class="submit-row">
+      <button type="submit" class="pill big" id="submit_btn">Сохранить в ORG</button>
+      <p id="send_status" class="send-status" hidden></p>
+    </div>
+  </form>
+
+  <!-- after submit: thanks (photos were uploaded in the background while the form was being filled) -->
+  <section id="done" hidden>
+    <h2 class="done-title" id="org_done_title">Сохранено</h2>
+    <p id="org_done_text"></p>
+    <p><a class="pill big" id="org_doc_link" href="#" target="_blank" rel="noopener">Открыть документ</a></p>
+
+    <div class="out">
+      <p data-i18n="local_note"></p>
+      <pre id="out_pre"></pre>
+      <button type="button" class="link-btn" id="back_local" data-i18n="back_local"></button>
+    </div>
+  </section>
+
+</main>
+
+<template id="speaker_tpl">
+  <fieldset class="speaker">
+    <legend><span data-i18n="speaker"></span> <span class="num"></span>
+      <button type="button" class="link-btn remove" data-i18n="remove"></button>
+    </legend>
+    <div class="field" data-required>
+      <label data-i18n="speaker_name"></label>
+      <span class="hint" data-i18n="speaker_name_hint"></span>
+      <input type="text" class="sp-name">
+    </div>
+    <div class="field">
+      <label data-i18n="speaker_web"></label>
+      <input type="text" class="sp-web">
+    </div>
+    <div class="field">
+      <label data-i18n="speaker_bio"></label>
+      <textarea rows="5" class="sp-bio"></textarea>
+    </div>
+    <div class="field">
+      <span class="label" data-i18n="speaker_photos"></span>
+      <p class="org-ro sp-photos"></p>
+    </div>
+  </fieldset>
+</template>
+
+<script src="i18n.js"></script>
+<script src="form.js"></script>
+</body>
+</html>

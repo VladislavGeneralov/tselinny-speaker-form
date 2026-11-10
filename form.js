@@ -9,6 +9,9 @@
   // never makes a duplicate event.
   const submissionId = randomHex(16);
   let busy = false;             // a submit or an upload is in flight
+  // org.html (<body data-org>) = organiser page (ORG_PAGE.md): the same form prefilled with the speaker's
+  // answers + organiser fields, saved once into ORG. Everything ORG-only is guarded by this flag.
+  const ORG = document.body.hasAttribute("data-org");
 
   const STR = window.I18N;
   const LOCALE = { en: "en-GB", ru: "ru-RU", kk: "kk-KZ" };
@@ -28,6 +31,7 @@
   /* ---------------- language ---------------- */
 
   function pickLang() {
+    if (ORG) return "ru"; // the organiser page is Russian only
     const q = new URLSearchParams(location.search).get("lang");
     if (q && STR[q]) return q;
     const saved = localStorage.getItem("speakerFormLang");
@@ -44,7 +48,7 @@
 
   function setLang(next) {
     lang = next;
-    localStorage.setItem("speakerFormLang", lang);
+    if (!ORG) localStorage.setItem("speakerFormLang", lang);
     document.documentElement.lang = lang === "kk" ? "kk" : lang;
     $$(".langs button").forEach(b => b.classList.toggle("on", b.dataset.lang === lang));
     applyI18n();
@@ -193,11 +197,12 @@
     if (onPhotosChange) onPhotosChange();
   }
 
-  const stagedIds = box => box._files.filter(x => x.status === "ok").map(x => x.stagedId);
+  const stagedIds = box => ((box && box._files) || []).filter(x => x.status === "ok").map(x => x.stagedId);
 
   /* ---------------- speakers ---------------- */
 
-  function addSpeaker() {
+  // src (organiser page only) = index of this speaker in the submission; photos follow it on save.
+  function addSpeaker(src) {
     const id = ++state.speakerSeq;
     const node = $("#speaker_tpl").content.firstElementChild.cloneNode(true);
     // give every control a unique id so its label is clickable
@@ -211,9 +216,11 @@
       renumberSpeakers();
     });
     $("#speakers").append(node);
-    makeUploader($(".sp-photos", node));
+    if (ORG) orgSpeakerPhotos(node, src);
+    else makeUploader($(".sp-photos", node));
     applyI18n(node);
     renumberSpeakers();
+    return node;
   }
 
   function renumberSpeakers() {
@@ -224,7 +231,7 @@
     });
   }
 
-  $("#add_speaker").addEventListener("click", addSpeaker);
+  $("#add_speaker").addEventListener("click", () => addSpeaker());
 
   /* ---------------- "Other" text inputs ---------------- */
 
@@ -359,6 +366,7 @@
     const list = sortedDates();
     $("#cal_sum").textContent = list.length ? `${list.length} · ${dateRange(list)}` : "";
     $("#cal_clear").hidden = !list.length;
+    if (ORG) renderSchedule();
   }
 
   /* ---------------- validation ---------------- */
@@ -388,8 +396,8 @@
       const ctl = $("input, textarea", f);
       if (!ctl.value.trim()) { setErr(f, "err_required"); bad.push(f); }
     });
-    const em = $(".field[data-email]", form);
-    const ev = $("input", em).value.trim();
+    const em = $(".field[data-email]", form); // absent on the organiser page (contact is read-only there)
+    const ev = em ? $("input", em).value.trim() : "";
     if (ev && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ev)) { setErr(em, "err_email"); bad.push(em); }
     if (!state.dates.size) { setErr($("#dates_field"), "err_dates"); bad.push($("#dates_field")); }
     // interpreter: required; «Other» needs its text too
@@ -398,13 +406,14 @@
       setErr($("#interp_field"), "err_required");
       bad.push($("#interp_field"));
     }
+    if (ORG) orgValidate(bad);
     // report in document order
     return bad.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
   }
 
   /* ---------------- collect ---------------- */
 
-  const val = id => $("#" + id).value.trim();
+  const val = id => { const el = $("#" + id); return el ? el.value.trim() : ""; };
   const checkedValues = name => $$(`input[name="${name}"]:checked`, form).map(i => i.value);
 
   function collect() {
@@ -447,6 +456,7 @@
       bad[0].scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    if (ORG) { orgSubmit(); return; }
     if (!(await photosReady())) return;
     const data = collect();
     if (!WEBAPP_URL) { showDone(data, null); return; }
@@ -456,7 +466,7 @@
     let res;
     try {
       res = await postJSON({ v: 1, action: "submit", submissionId, hp: $("#hp").value,
-                             elapsedMs: Date.now() - T0, data });
+                             elapsedMs: Date.now() - T0, lang, data });
     } catch (err) {
       res = { ok: false, error: "server" };
     }
@@ -467,7 +477,8 @@
       return;
     }
     setSendStatus(null);
-    showDone(data, res);
+    if (res.buyUrl && res.d && res.k) showBuyQuestion(data, res);
+    else showDone(data, res);
   });
 
   // Submit waits for background uploads; false = some photo failed (retry or remove it first).
@@ -539,6 +550,10 @@
       else if (f === "title") el = fieldOf("event_title");
       else if (f === "description") el = fieldOf("event_desc");
       else if (f === "dates") { el = $("#dates_field"); key = "err_dates"; }
+      else if (f === "ticketing" && ORG) { el = $("#ticket_field"); key = "err_org_ticket"; }
+      else if (f === "siteCategories") { el = $("#cats_field"); key = "err_org_cats"; }
+      else if (f === "eduCategory") el = $("#edu_field");
+      else if (/^schedule\./.test(f)) { el = $("#dates_field"); key = "err_org_times"; }
       else {
         const m = /^speakers\.(\d+)\.name$/.exec(f);
         const s = m && $$("#speakers .speaker")[m[1] - 1];
@@ -563,7 +578,41 @@
     if (busy || allPhotos().some(x => x.status === "up" || x.status === "wait")) { e.preventDefault(); e.returnValue = ""; }
   });
 
-  /* ---------------- after submit: thanks ---------------- */
+  /* ---------------- after submit: purchase question, then thanks ---------------- */
+
+  // «Нужна закупка?» Да/Нет → buyAnswer (RAW «ЗАКУПКА» status). Да → «Заполнить сейчас» opens the
+  // purchase page in this tab, «Позже» → thanks + «the team will send the link». No mail to the speaker.
+  function showBuyQuestion(data, res) {
+    form.hidden = true;
+    $("main.wrap > h1").hidden = true;
+    $(".req-note").hidden = true;
+    $("#buyq").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    const status = $("#buyq_status");
+    $("#buyq_1").onclick = async e => {
+      const b = e.target.closest("button[data-ans]");
+      if (!b) return;
+      $$("#buyq button").forEach(x => { x.disabled = true; });
+      status.textContent = t("sending");
+      status.hidden = false;
+      try { await postJSON({ v: 1, action: "buyAnswer", d: res.d, k: res.k, answer: b.dataset.ans }); }
+      catch (err) { /* status stays «нет ответа»; the team has the link in RAW anyway */ }
+      status.hidden = true;
+      $$("#buyq button").forEach(x => { x.disabled = false; });
+      if (b.dataset.ans === "no") { $("#buyq").hidden = true; showDone(data, res); }
+      else { $("#buyq_1").hidden = true; $("#buyq_2").hidden = false; }
+    };
+    $("#buy_now").onclick = () => {
+      const u = new URL(res.buyUrl);
+      u.searchParams.set("lang", lang); // the language the speaker has now
+      location.href = u.toString();
+    };
+    $("#buy_later").onclick = () => {
+      $("#buyq").hidden = true;
+      $("#done_later").hidden = false;
+      showDone(data, res);
+    };
+  }
 
   function showDone(data, res) {
     form.hidden = true;
@@ -584,13 +633,218 @@
     form.hidden = false;
   });
 
+  /* ---------------- organiser page (org.html, ORG_PAGE.md) ---------------- */
+
+  const SITE_CATS = ["Exhibition", "Film", "Performance", "Special Commission", "Lecture", "Workshop",
+                     "Discussion", "Children & Teens", "Live Concert"];
+  const EDU_CATS = [["Children & Families", "Children & Families"], ["Teens", "Teens"], ["Adults", "Adults"],
+                    ["Talks", "Talks"], ["none", "без категории"]];
+  const WEEKDAYS = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
+  const org = { d: "", k: "", photos: null, times: {} }; // times: iso → «19:00–21:00»
+
+  function orgSpeakerPhotos(node, src) {
+    if (Number.isInteger(src)) node.dataset.src = src;
+    const n = Number.isInteger(src) && org.photos ? (org.photos.speakers[src] || 0) : 0;
+    $(".sp-photos", node).textContent = Number.isInteger(src)
+      ? (n ? "Ссылок на фото: " + n + " (перенесутся в ORG)" : "Спикер фото не прислал")
+      : "Новый спикер — без фото (можно добавить в папку «Фото» и вставить ссылку в ORG)";
+  }
+
+  // one time input per selected date (ORG «РАСПИСАНИЕ»)
+  function renderSchedule() {
+    const box = $("#org_schedule");
+    const list = sortedDates();
+    if (!list.length) { box.innerHTML = ""; return; }
+    box.innerHTML = '<p class="org-sched-title">Время у каждой даты</p>' + list.map(iso => {
+      const [y, m, d] = iso.split("-");
+      const wd = WEEKDAYS[new Date(+y, m - 1, +d).getDay()];
+      return `<label class="org-row"><span>${d}.${m}.${y}, ${wd}</span>` +
+             `<input type="text" data-iso="${iso}" value="${esc(org.times[iso] || "")}" placeholder="19:00–21:00"></label>`;
+    }).join("") + (list.length > 1 ? '<button type="button" class="link-btn" id="org_fill_times">Проставить первое время во все пустые</button>' : "");
+  }
+
+  if (ORG) {
+    $("#org_schedule").addEventListener("input", e => {
+      const i = e.target.closest("input[data-iso]");
+      if (i) { org.times[i.dataset.iso] = i.value; i.classList.remove("bad"); }
+    });
+    $("#org_schedule").addEventListener("click", e => {
+      if (!e.target.closest("#org_fill_times")) return;
+      const first = sortedDates().map(iso => (org.times[iso] || "").trim()).find(Boolean);
+      if (!first) return;
+      sortedDates().forEach(iso => { if (!(org.times[iso] || "").trim()) org.times[iso] = first; });
+      renderSchedule();
+      clearErr($("#dates_field"));
+    });
+  }
+
+  function orgValidate(bad) {
+    const mark = (id, key) => { const f = $("#" + id); setErr(f, key); bad.push(f); };
+    if (!checkedValues("ticket_org").length) mark("ticket_field", "err_org_ticket");
+    if (!checkedValues("org_cat").length) mark("cats_field", "err_org_cats");
+    if (!checkedValues("org_edu").length) mark("edu_field", "err_required");
+    if (state.dates.size) {
+      const empty = $$("#org_schedule input[data-iso]").filter(i => !i.value.trim());
+      empty.forEach(i => i.classList.add("bad"));
+      if (empty.length) mark("dates_field", "err_org_times");
+    }
+  }
+
+  function collectOrg() {
+    const data = collect();
+    delete data.contact; // read-only here; the server keeps the speaker's own
+    data.speakers.forEach((s, i) => {
+      const src = $$("#speakers .speaker")[i].dataset.src;
+      s.src = src === undefined || src === "" ? null : +src;
+      delete s.photos;
+    });
+    delete data.promo;
+    return Object.assign(data, {
+      ticketing: checkedValues("ticket_org")[0] || "",
+      siteCategories: checkedValues("org_cat"),
+      eduCategory: checkedValues("org_edu")[0] || "",
+      schedule: sortedDates().map(iso => ({ date: iso, time: (org.times[iso] || "").trim() })),
+      pricePerSession: val("org_price"),
+      priceCourse: val("org_price_course"),
+      photobankBrief: val("org_photobank"),
+      posterBrief: val("org_poster")
+    });
+  }
+
+  async function orgSubmit() {
+    setBusy(true);
+    setSendStatus("sending", false);
+    let res;
+    try {
+      res = await postJSON({ v: 1, action: "orgSave", d: org.d, k: org.k, data: collectOrg() });
+    } catch (err) {
+      res = { ok: false, error: "server" };
+    }
+    setBusy(false);
+    if (res.ok) { setSendStatus(null); orgDone(res.savedAt, res.docUrl, false); return; }
+    if (res.error === "saved") { setSendStatus(null); orgDone(res.savedAt, res.docUrl, true); return; }
+    if (res.error === "invalid" && (res.fields || [])[0] === "key") { orgMessage("Ссылка недействительна."); return; }
+    if (res.error === "invalid") { markServerFields(res.fields || []); setSendStatus("err_invalid", true); return; }
+    setSendStatus("org_err_server", true);
+  }
+
+  function orgMessage(text) {
+    form.hidden = true;
+    const p = $("#org_msg");
+    p.textContent = text;
+    p.hidden = false;
+  }
+
+  function orgDone(savedAt, docUrl, already) {
+    form.hidden = true;
+    $("#org_msg").hidden = true;
+    $("#org_title").hidden = true;
+    $("#org_doc_top").hidden = true;
+    $(".req-note").hidden = true;
+    $(".out").hidden = true;
+    $("#org_done_title").textContent = already ? "Заявка уже проверена" : "Сохранено";
+    $("#org_done_text").textContent = (already ? "Проверена" + (savedAt ? " " + savedAt : "") : "Сохранено " + savedAt) +
+      ". Дальше правки — во вкладке ORG документа.";
+    $("#org_doc_link").href = docUrl || "#";
+    $("#done").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // the organiser page opens prefilled with the speaker's answers (the submit payload, PROTOCOL.md)
+  function prefill(d, res) {
+    const setVal = (id, v) => { const el = $("#" + id); if (el) el.value = v == null ? "" : v; };
+    const tick = (name, values) => $$(`input[name="${name}"]`, form).forEach(i => { i.checked = values.includes(i.value); });
+    const showOther = name => $$(`input[name="${name}"][data-other]`, form).forEach(o => { $("#" + o.dataset.other).hidden = !o.checked; });
+    const c = d.contact || {};
+    $("#org_contact").textContent = [c.name, c.email, c.phone].filter(Boolean).join(", ");
+
+    tick("venue", d.venues || []); setVal("venue_other", d.venueOther); showOther("venue");
+    setVal("event_title", d.title); setVal("event_desc", d.description); setVal("duration", d.sessionLength);
+    (d.speakers || []).forEach((s, i) => {
+      const node = addSpeaker(i);
+      $(".sp-name", node).value = s.name || "";
+      $(".sp-web", node).value = s.web || "";
+      $(".sp-bio", node).value = s.bio || "";
+    });
+    if (!$$("#speakers .speaker").length) addSpeaker();
+
+    const p = res.photos || {};
+    $("#org_photos").textContent = "Загружено фото: " + (p.inFolder || 0) + " (файлов в папке «Фото»)";
+    $("#org_photo_link").href = p.folderUrl || "#";
+
+    tick("language", d.languages || []); setVal("language_other", d.languageOther); showOther("language");
+    setVal("age", d.ageLimit); setVal("capacity", d.capacity || 1);
+    setVal("participant_req", d.participantRequirements);
+    tick("interpreter", d.interpreter ? [d.interpreter] : []); setVal("interpreter_other", d.interpreterOther); showOther("interpreter");
+    setVal("access", d.accessibility);
+    $("#fem").checked = !!d.feminatives;
+
+    // tech: tick + mic count, then re-render so quantity selects show up
+    const presets = (d.tech && d.tech.presets) || [];
+    $$('#tech_presets input[name="tech"]').forEach(cb => {
+      const p = presets.find(x => x && x.id === cb.value);
+      cb.checked = !!p;
+      const sel = $("select", cb.closest(".tech-row"));
+      if (p && sel && p.count) sel.value = String(p.count);
+    });
+    renderTechPresets();
+    setVal("tech_req", d.tech && d.tech.text);
+
+    // ticket type: only the three final ones; the speaker's «обсудим отдельно» → hint
+    const TICKET_NAMES = { free: "свободный вход", registration: "нужна регистрация", ticketed: "вход по билетам", tbd: "обсудим отдельно" };
+    tick("ticket_org", d.ticketing && d.ticketing !== "tbd" ? [d.ticketing] : []);
+    $("#ticket_hint").textContent = "Спикер выбрал: «" + (TICKET_NAMES[d.ticketing] || "—") + "»" +
+      (d.ticketing === "tbd" || !d.ticketing ? " — выберите одно из трёх" : "");
+
+    $("#org_cats").innerHTML = SITE_CATS.map(cat =>
+      `<label class="choice"><input type="checkbox" name="org_cat" value="${esc(cat)}"><span>${esc(cat)}</span></label>`).join("");
+    $("#org_edu").innerHTML = EDU_CATS.map(([v, label]) =>
+      `<label class="choice radio"><input type="radio" name="org_edu" value="${esc(v)}"><span>${esc(label)}</span></label>`).join("");
+
+    state.dates = new Set(d.dates || []);
+    const first = [...state.dates].sort()[0];
+    if (first) { const [y, m] = first.split("-"); state.view = { y: +y, m: m - 1 }; }
+    renderCal();
+  }
+
+  async function orgInit() {
+    const q = new URLSearchParams(location.search);
+    org.d = q.get("d") || "";
+    org.k = q.get("k") || "";
+    if (!org.d || !org.k) { orgMessage("Ссылка недействительна."); return; }
+    let res;
+    try {
+      res = await postJSON({ v: 1, action: "orgLoad", d: org.d, k: org.k });
+    } catch (e) {
+      orgMessage("Не удалось загрузить заявку. Проверьте интернет и обновите страницу.");
+      return;
+    }
+    if (!res.ok) {
+      orgMessage(res.error === "invalid" ? "Ссылка недействительна." : "Не удалось загрузить заявку (ошибка сервера). Обновите страницу.");
+      return;
+    }
+    if (res.savedAt) { orgDone(res.savedAt, res.docUrl, true); return; }
+    org.photos = res.photos || null;
+    prefill(res.data || {}, res);
+    $("#org_title").textContent = "Заявка" + (res.submittedAt ? " от " + res.submittedAt : "");
+    $("#org_doc_top_link").href = res.docUrl || "#";
+    $("#org_doc_top").hidden = false;
+    $("#org_msg").hidden = true;
+    form.hidden = false;
+  }
+
   /* ---------------- utils + init ---------------- */
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
-  makeUploader($("#promo"));
-  addSpeaker();
-  setLang(lang);
+  if (ORG) {
+    setLang(lang);
+    orgInit();
+  } else {
+    makeUploader($("#promo"));
+    addSpeaker();
+    setLang(lang);
+  }
 })();
