@@ -535,6 +535,7 @@
       let el = null, key = "err_required";
       if (f === "contact.name") el = fieldOf("contact_name");
       else if (f === "contact.email") { el = fieldOf("email"); key = "err_email"; }
+      else if (f === "contact.phone") el = fieldOf("phone");
       else if (f === "title") el = fieldOf("event_title");
       else if (f === "description") el = fieldOf("event_desc");
       else if (f === "dates") { el = $("#dates_field"); key = "err_dates"; }
@@ -570,11 +571,16 @@
     $(".out").hidden = !local;
     if (local) $("#out_pre").textContent = JSON.stringify(data, null, 2);
     $("#done").hidden = false;
+    // thanks screen: no form title, no «* required» note (Vlad)
+    $("main.wrap > h1").hidden = true;
+    $(".req-note").hidden = true;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   $("#back_local").addEventListener("click", () => {
     $("#done").hidden = true;
+    $("main.wrap > h1").hidden = false;
+    $(".req-note").hidden = false;
     form.hidden = false;
   });
 

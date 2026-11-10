@@ -380,3 +380,10 @@ input:focus, textarea:focus, select:focus { border-bottom-color: var(--accent); 
   position: static; width: auto; height: auto; margin-top: 4px; padding: 2px 8px;
   border: 1px solid var(--err); border-radius: 0; background: none; color: var(--err); font-size: 11px; cursor: pointer;
 }
+
+/* while sending / waiting for photos the Submit button is disabled — make it look so */
+.pill:disabled { opacity: .45; cursor: default; }
+
+/* thanks screen centred */
+#done { text-align: center; margin-top: 80px; }
+#done .out { text-align: left; }
