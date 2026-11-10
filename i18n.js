@@ -423,3 +423,23 @@ Object.assign(window.I18N.ru, {
   err_org_times: "Укажите время у каждой даты",
   org_err_server: "Не удалось сохранить. Проверьте интернет и нажмите «Сохранить в ORG» ещё раз."
 });
+
+// Purchase page: thanks screen after sending (Vlad 10.11 — the form disappears; changes via a staff member).
+Object.assign(window.I18N.en, {
+  buy_thanks_title: "Thank you!",
+  buy_thanks_text: "Your purchase list has been sent.",
+  buy_edit_until: "If you want to make changes, please contact a Tselinny staff member before {deadline}.",
+  buy_edit_nodl: "If you want to make changes, please contact a Tselinny staff member."
+});
+Object.assign(window.I18N.ru, {
+  buy_thanks_title: "Спасибо!",
+  buy_thanks_text: "Заявка на закупку отправлена.",
+  buy_edit_until: "Если захотите внести правки, свяжитесь с сотрудником Целинного до {deadline}.",
+  buy_edit_nodl: "Если захотите внести правки, свяжитесь с сотрудником Целинного."
+});
+Object.assign(window.I18N.kk, {
+  buy_thanks_title: "Рахмет!",
+  buy_thanks_text: "Сатып алу тізімі жіберілді.",
+  buy_edit_until: "Өзгеріс енгізгіңіз келсе, {deadline} дейін Целинный қызметкерімен байланысыңыз.",
+  buy_edit_nodl: "Өзгеріс енгізгіңіз келсе, Целинный қызметкерімен байланысыңыз."
+});

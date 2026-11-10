@@ -461,3 +461,8 @@ input:focus, textarea:focus, select:focus { border-bottom-color: var(--accent); 
 #org_fill_times { margin-top: 10px; font-size: 13px; }
 #done .pill { display: inline-block; text-decoration: none; }
 .org-top { margin: -36px 0 36px; }
+
+/* purchase page: thanks screen */
+#buy_done { text-align: center; margin-top: 80px; }
+#buy_done > p { margin: 0 0 16px; font-size: 18px; font-weight: 300; }
+.org-live { color: var(--text); margin-top: -4px; }

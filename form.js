@@ -366,7 +366,7 @@
     const list = sortedDates();
     $("#cal_sum").textContent = list.length ? `${list.length} · ${dateRange(list)}` : "";
     $("#cal_clear").hidden = !list.length;
-    if (ORG) renderSchedule();
+    if (ORG) { renderSchedule(); renderPriceInfo(); }
   }
 
   /* ---------------- validation ---------------- */
@@ -443,7 +443,7 @@
       interpreterOther: interp === "other" ? val("interpreter_other") : "",
       ticketing: val("ticketing"),
       accessibility: val("access"),
-      feminatives: $("#fem").checked,
+      feminatives: $("#fem") ? $("#fem").checked : !!org.fem, // no checkbox on the organiser page
       tech: { presets: techPresets(), text: techOtherOn() ? val("tech_req") : "" }
     };
   }
@@ -640,7 +640,7 @@
   const EDU_CATS = [["Children & Families", "Children & Families"], ["Teens", "Teens"], ["Adults", "Adults"],
                     ["Talks", "Talks"], ["none", "без категории"]];
   const WEEKDAYS = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
-  const org = { d: "", k: "", photos: null, times: {} }; // times: iso → «19:00–21:00»
+  const org = { d: "", k: "", photos: null, times: {}, fem: false }; // times: iso → «19:00–21:00»
 
   function orgSpeakerPhotos(node, src) {
     if (Number.isInteger(src)) node.dataset.src = src;
@@ -663,7 +663,26 @@
     }).join("") + (list.length > 1 ? '<button type="button" class="link-btn" id="org_fill_times">Проставить первое время во все пустые</button>' : "");
   }
 
+  // live lines under the price hints (Vlad 10.11): chosen ticket type; number of dates + price × dates
+  const TICKET_RU = { free: "свободный вход", registration: "нужна регистрация", ticketed: "вход по билетам" };
+  function renderPriceInfo() {
+    const tk = checkedValues("ticket_org")[0];
+    $("#org_price_info").textContent = tk ? "Выбрано: " + TICKET_RU[tk] : "Тип билетов ещё не выбран";
+    const n = state.dates.size;
+    const price = val("org_price").replace(/[\s ]/g, "");
+    let line;
+    if (!n) line = "Даты не выбраны";
+    else if (n === 1) line = "Выбрано 1 мероприятие, можно не заполнять";
+    else if (/^\d+$/.test(price)) {
+      const fmt = x => x.toLocaleString("ru-RU");
+      line = `Выбрано дат: ${n} · ${fmt(+price)} × ${n} = ${fmt(+price * n)}`;
+    } else line = `Выбрано дат: ${n} · впишите цену за одно занятие — посчитаю цену × ${n}`;
+    $("#org_course_info").textContent = line;
+  }
+
   if (ORG) {
+    $("#org_price").addEventListener("input", renderPriceInfo);
+    form.addEventListener("change", e => { if (e.target.name === "ticket_org") renderPriceInfo(); });
     $("#org_schedule").addEventListener("input", e => {
       const i = e.target.closest("input[data-iso]");
       if (i) { org.times[i.dataset.iso] = i.value; i.classList.remove("bad"); }
@@ -777,7 +796,7 @@
     setVal("participant_req", d.participantRequirements);
     tick("interpreter", d.interpreter ? [d.interpreter] : []); setVal("interpreter_other", d.interpreterOther); showOther("interpreter");
     setVal("access", d.accessibility);
-    $("#fem").checked = !!d.feminatives;
+    org.fem = !!d.feminatives; // not shown on this page (Vlad 10.11), saved as the speaker chose
 
     // tech: tick + mic count, then re-render so quantity selects show up
     const presets = (d.tech && d.tech.presets) || [];

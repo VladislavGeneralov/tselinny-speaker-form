@@ -67,7 +67,19 @@
     list($("#buy_how"), "buy_how");
     if (closed === "link") $("#buy_closed").textContent = t("buy_bad_link");
     if (closed === "deadline") $("#buy_closed").textContent = t("buy_closed").replace("{deadline}", info.deadline || "");
+    if (info && info.deadline) $("#buy_edit_note").textContent = t("buy_edit_until").replace("{deadline}", info.deadline);
+    else $("#buy_edit_note").textContent = t("buy_edit_nodl");
     renderSent();
+  }
+
+  // Once sent, the form is gone for good — changes go through a Tselinny staff member (Vlad 10.11).
+  function showThanks() {
+    form.hidden = true;
+    $("#buy_loading").hidden = true;
+    $("h1").hidden = true;
+    $("#buy_done").hidden = false;
+    renderTexts();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function renderSent() {
@@ -239,6 +251,7 @@
       return;
     }
     info = res;
+    if (res.sentAt) { showThanks(); return; }
     if (res.closed) { showClosed("deadline"); return; }
 
     $("#buy_event").textContent = res.title || "";
@@ -288,13 +301,8 @@
     info.items = items;
     info.sentAt = res.sentAt;
     try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* ignore */ }
-    $("#buy_draft").hidden = true;
-    renderSent();
     setStatus(null);
-    const p = $("#buy_status");
-    p.hidden = false;
-    p.classList.remove("bad");
-    p.textContent = $("#buy_sent").textContent;
+    showThanks();
   });
 
   /* ---------------- utils + init ---------------- */

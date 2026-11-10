@@ -173,11 +173,6 @@
       <input id="access" type="text">
     </div>
 
-    <div class="field">
-      <span class="label" data-i18n="fem"></span>
-      <span class="hint" data-i18n="fem_hint"></span>
-      <label class="choice solo"><input type="checkbox" id="fem" checked><span></span></label>
-    </div>
 
     <h2 class="org-h">Для организатора</h2>
 
@@ -195,12 +190,14 @@
     <div class="field">
       <label for="org_price">Цена за одно занятие</label>
       <span class="hint">обязательна, если «вход по билетам» (можно вписать позже в ORG)</span>
+      <span class="hint org-live" id="org_price_info"></span>
       <input id="org_price" type="text" inputmode="numeric">
     </div>
 
     <div class="field">
       <label for="org_price_course">Цена за курс</label>
       <span class="hint">необязательна</span>
+      <span class="hint org-live" id="org_course_info"></span>
       <input id="org_price_course" type="text" inputmode="numeric">
     </div>
 
