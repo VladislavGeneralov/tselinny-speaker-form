@@ -463,23 +463,32 @@
 
     setBusy(true);
     setSendStatus("sending", false);
-    let res;
-    try {
-      res = await postJSON({ v: 1, action: "submit", submissionId, hp: $("#hp").value,
-                             elapsedMs: Date.now() - T0, lang, data });
-    } catch (err) {
-      res = { ok: false, error: "server" };
-    }
-    setBusy(false);
-    if (!res.ok) {
-      if (res.error === "invalid") { markServerFields(res.fields || []); setSendStatus("err_invalid", true); }
-      else setSendStatus("err_server", true);
-      return;
-    }
+    // Vlad 16.11: the purchase question shows at once — the server needs seconds to create the event, the speaker
+    // reads the question meanwhile. Their answer waits for the server; a server error brings the form back.
+    sendPending = true;
+    const pending = postJSON({ v: 1, action: "submit", submissionId, hp: $("#hp").value,
+                               elapsedMs: Date.now() - T0, lang, data })
+      .catch(() => ({ ok: false, error: "server" }))
+      .then(res => { sendPending = false; setBusy(false); return res; });
+    showBuyQuestion(data, pending);
+    const res = await pending;
+    if (!res.ok) { backToForm(res); return; }
     setSendStatus(null);
-    if (res.buyUrl && res.d && res.k) showBuyQuestion(data, res);
-    else showDone(data, res);
+    if (!(res.buyUrl && res.d && res.k)) { $("#buyq").hidden = true; showDone(data, res); }
   });
+
+  let sendPending = false;
+
+  // The submit failed after the purchase question was already shown → the form again, with the error.
+  function backToForm(res) {
+    $("#buyq").hidden = true;
+    form.hidden = false;
+    $("main.wrap > h1").hidden = false;
+    $(".req-note").hidden = false;
+    if (res.error === "invalid") { markServerFields(res.fields || []); setSendStatus("err_invalid", true); }
+    else setSendStatus("err_server", true);
+    $("#send_status").scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   // Submit waits for background uploads; false = some photo failed (retry or remove it first).
   async function photosReady() {
@@ -574,6 +583,7 @@
 
   // Closing the tab while photos upload or the form is being sent loses them — ask first.
   window.addEventListener("beforeunload", e => {
+    if (sendPending) { e.preventDefault(); e.returnValue = ""; return; } // the server is still creating the event
     if (form.hidden) return;   // already sent
     if (busy || allPhotos().some(x => x.status === "up" || x.status === "wait")) { e.preventDefault(); e.returnValue = ""; }
   });
@@ -582,32 +592,49 @@
 
   // «Нужна закупка?» Да/Нет → buyAnswer (RAW «ЗАКУПКА» status). Да → «Заполнить сейчас» opens the
   // purchase page in this tab, «Позже» → thanks + «the team will send the link». No mail to the speaker.
-  function showBuyQuestion(data, res) {
+  // pending = the submit request (a promise): shown before the server answers, every button waits for it.
+  function showBuyQuestion(data, pending) {
     form.hidden = true;
     $("main.wrap > h1").hidden = true;
     $(".req-note").hidden = true;
     $("#buyq").hidden = false;
+    $("#buyq_1").hidden = false; $("#buyq_2").hidden = true;
     window.scrollTo({ top: 0, behavior: "smooth" });
     const status = $("#buyq_status");
+    const waitServer = async () => { // null = the submit failed (backToForm already shown)
+      status.textContent = t("sending");
+      status.hidden = false;
+      const res = await pending;
+      status.hidden = true;
+      return res.ok && res.d && res.k ? res : null;
+    };
     $("#buyq_1").onclick = async e => {
       const b = e.target.closest("button[data-ans]");
       if (!b) return;
       $$("#buyq button").forEach(x => { x.disabled = true; });
-      status.textContent = t("sending");
-      status.hidden = false;
-      try { await postJSON({ v: 1, action: "buyAnswer", d: res.d, k: res.k, answer: b.dataset.ans }); }
-      catch (err) { /* status stays «нет ответа»; the team has the link in RAW anyway */ }
-      status.hidden = true;
+      const res = await waitServer();
+      if (res) {
+        status.textContent = t("sending");
+        status.hidden = false;
+        try { await postJSON({ v: 1, action: "buyAnswer", d: res.d, k: res.k, answer: b.dataset.ans }); }
+        catch (err) { /* status stays «нет ответа»; the team has the link in RAW anyway */ }
+        status.hidden = true;
+      }
       $$("#buyq button").forEach(x => { x.disabled = false; });
+      if (!res) return;
       if (b.dataset.ans === "no") { $("#buyq").hidden = true; showDone(data, res); }
       else { $("#buyq_1").hidden = true; $("#buyq_2").hidden = false; }
     };
-    $("#buy_now").onclick = () => {
+    $("#buy_now").onclick = async () => {
+      const res = await waitServer();
+      if (!res) return;
       const u = new URL(res.buyUrl);
       u.searchParams.set("lang", lang); // the language the speaker has now
       location.href = u.toString();
     };
-    $("#buy_later").onclick = () => {
+    $("#buy_later").onclick = async () => {
+      const res = await waitServer();
+      if (!res) return;
       $("#buyq").hidden = true;
       $("#done_later").hidden = false;
       showDone(data, res);
@@ -845,6 +872,8 @@
     if (res.savedAt) { orgDone(res.savedAt, res.docUrl, true); return; }
     org.photos = res.photos || null;
     prefill(res.data || {}, res);
+    // staff names come from the server config (config.gs ROLE_*), not from this page (Vlad 16.11)
+    $$("[data-role]").forEach(el => { const n = (res.roles || {})[el.dataset.role]; if (n) el.textContent = "читает " + n; });
     $("#org_title").textContent = "Заявка" + (res.submittedAt ? " от " + res.submittedAt : "");
     $("#org_doc_top_link").href = res.docUrl || "#";
     $("#org_doc_top").hidden = false;
